@@ -37,6 +37,16 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        .recipe-card-container {
+            touch-action: pan-y;
+        }
+        .recipe-card-content {
+            will-change: transform;
+        }
+        .recipe-card-actions {
+            width: 128px;
+            transform: translateX(100%);
+        }
         .progress-ring {
             transform: rotate(-90deg);
         }
@@ -404,6 +414,77 @@
     <div id="toast" class="toast"></div>
 
     <script>
+        function initSwipeGestures() {
+            const recipeCards = document.querySelectorAll('.recipe-card-container');
+            recipeCards.forEach(card => {
+                const cardContent = card.querySelector('.recipe-card-content');
+                let startX = 0;
+                let currentX = 0;
+                let isDragging = false;
+
+                const handleTouchStart = (e) => {
+                    startX = e.touches[0].clientX;
+                    isDragging = true;
+                    cardContent.style.transition = 'none';
+                };
+
+                const handleTouchMove = (e) => {
+                    if (!isDragging) return;
+                    
+                    currentX = e.touches[0].clientX;
+                    const diffX = currentX - startX;
+                    
+                    // 只允许向左滑动，且最大滑动距离为128px
+                    if (diffX < 0 && diffX > -128) {
+                        cardContent.style.transform = `translateX(${diffX}px)`;
+                        // 同时移动操作按钮
+                        const actionsTranslateX = 100 + (diffX / 128 * 100);
+                        card.querySelector('.recipe-card-actions').style.transform = `translateX(${actionsTranslateX}%)`;
+                    }
+                };
+
+                const handleTouchEnd = () => {
+                    if (!isDragging) return;
+                    
+                    isDragging = false;
+                    cardContent.style.transition = 'transform 0.3s ease';
+                    card.querySelector('.recipe-card-actions').style.transition = 'transform 0.3s ease';
+                    
+                    const diffX = currentX - startX;
+                    
+                    // 如果滑动距离超过64px，则显示操作按钮
+                    if (diffX < -64) {
+                        cardContent.style.transform = 'translateX(-128px)';
+                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(0%)';
+                    } else {
+                        cardContent.style.transform = 'translateX(0)';
+                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
+                    }
+                };
+
+                const handleCardClick = () => {
+                    if (cardContent.style.transform === 'translateX(-128px)') {
+                        cardContent.style.transform = 'translateX(0)';
+                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
+                    }
+                };
+
+                // 添加事件监听器
+                card.addEventListener('touchstart', handleTouchStart);
+                card.addEventListener('touchmove', handleTouchMove);
+                card.addEventListener('touchend', handleTouchEnd);
+                cardContent.addEventListener('click', handleCardClick);
+
+                // 存储事件监听器引用，以便后续清理
+                card._gestureHandlers = {
+                    handleTouchStart,
+                    handleTouchMove,
+                    handleTouchEnd,
+                    handleCardClick
+                };
+            });
+        }
+
         lucide.createIcons();
 
         // 数据存储
@@ -436,6 +517,7 @@
             }
             
             lucide.createIcons();
+            initSwipeGestures();
             updateRecipeCount();
         }
 
@@ -453,12 +535,14 @@
                     </div>
                 `;
                 lucide.createIcons();
+            initSwipeGestures();
                 return;
             }
 
             recipes.forEach((recipe, index) => {
                 const recipeCard = document.createElement('div');
-                recipeCard.className = 'recipe-card bg-white rounded-lg shadow-sm overflow-hidden';
+                recipeCard.className = 'recipe-card-container relative overflow-hidden rounded-lg shadow-sm';
+                recipeCard.dataset.index = index;
                 
                 // 根据菜谱名称选择一个图标
                 let recipeIcon = 'utensils';
@@ -469,34 +553,41 @@
                 else if (recipe.title.includes('菜') || recipe.title.includes('蔬')) recipeIcon = 'carrot';
                 
                 recipeCard.innerHTML = `
-                    <div class="p-4">
-                        <div class="flex items-center mb-2">
-                            <i data-lucide="${recipeIcon}" class="w-6 h-6 text-green-500 mr-2"></i>
-                            <h3 class="text-lg font-semibold">${recipe.title}</h3>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4">${recipe.description}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-500">${recipe.ingredients.length} 种食材 · ${recipe.steps.length} 个步骤</span>
-                            <div class="flex space-x-2">
-                                <button onclick="editRecipe(${index})" class="text-green-500 hover:text-green-700">
-                                    <i data-lucide="edit" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="showDeleteConfirmModal(${index})" class="text-red-500 hover:text-red-700">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
+                    <div class="recipe-card-actions absolute top-0 right-0 h-full flex z-10 transition-transform duration-300">
+                        <button onclick="editRecipe(${index})" class="bg-white text-green-500 w-16 h-full flex items-center justify-center hover:bg-green-50 transition-colors">
+                            <i data-lucide="edit" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="showDeleteConfirmModal(${index})" class="bg-white text-red-500 w-16 h-full flex items-center justify-center hover:bg-red-50 transition-colors">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="recipe-card-content bg-white rounded-lg shadow-sm overflow-hidden transform transition-transform duration-300">
+                        <div class="p-4">
+                            <div class="flex items-center mb-2">
+                                <i data-lucide="${recipeIcon}" class="w-6 h-6 text-green-500 mr-2"></i>
+                                <h3 class="text-lg font-semibold">${recipe.title}</h3>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">${recipe.description}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500">${recipe.ingredients.length} 种食材 · ${recipe.steps.length} 个步骤</span>
+                                <span class="text-xs text-gray-400">左滑编辑</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-2 flex justify-end">
-                        <button onclick="viewRecipeDetail(${index})" class="text-green-500 hover:text-green-700 text-sm font-medium">
-                            查看详情 <i data-lucide="arrow-right" class="w-4 h-4 inline"></i>
-                        </button>
+                        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
+                            <span class="text-xs text-gray-500">${new Date(recipe.createdAt).toLocaleDateString()}</span>
+                            <button onclick="viewRecipeDetail(${index})" class="text-green-500 hover:text-green-700 text-sm font-medium flex items-center">
+                                查看详情 <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
                 recipeList.appendChild(recipeCard);
+
+
             });
             
             lucide.createIcons();
+            initSwipeGestures();
         }
 
         // 查看菜谱详情
@@ -618,6 +709,7 @@
                 stepsList.appendChild(stepCard);
             });
             lucide.createIcons();
+            initSwipeGestures();
         }
 
         // 调整份数
@@ -763,6 +855,7 @@
                 recipeToDeleteIndex = index;
                 document.getElementById('delete-confirm-modal').classList.add('active');
                 lucide.createIcons();
+            initSwipeGestures();
             }
         }
 
@@ -788,6 +881,7 @@
         function showAddRecipeModal() {
             document.getElementById('add-recipe-modal').classList.add('active');
             lucide.createIcons();
+            initSwipeGestures();
         }
 
         // 隐藏添加菜谱模态框
@@ -828,6 +922,7 @@
             
             addEventListenersToForm();
             lucide.createIcons();
+            initSwipeGestures();
         }
 
         // 添加食材输入框
@@ -845,6 +940,7 @@
             `;
             container.appendChild(newInput);
             lucide.createIcons();
+            initSwipeGestures();
             
             // 添加删除按钮事件监听
             newInput.querySelector('.remove-ingredient').addEventListener('click', () => {
@@ -872,6 +968,7 @@
             `;
             container.appendChild(newInput);
             lucide.createIcons();
+            initSwipeGestures();
             
             // 添加删除按钮和计时复选框事件监听
             newInput.querySelector('.remove-step').addEventListener('click', () => {
@@ -1207,6 +1304,7 @@
                     </div>
                 `;
                 lucide.createIcons();
+            initSwipeGestures();
                 return;
             }
 
@@ -1249,8 +1347,11 @@
                     </div>
                 `;
                 recipeList.appendChild(recipeCard);
+
+
             });
             lucide.createIcons();
+            initSwipeGestures();
         }
 
         // 初始化
