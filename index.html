@@ -824,13 +824,82 @@
         }
 
         // 显示定时器完成提示模态框
+        // 播放提示音
+        function playNotificationSound() {
+            try {
+                // 创建音频上下文
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 创建振荡器
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 设置音频参数
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 高音调
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1); // 低音调
+                
+                // 设置音量包络
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                // 播放声音
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                // 重复播放3次，模拟完成提示音
+                setTimeout(() => {
+                    const oscillator2 = audioContext.createOscillator();
+                    const gainNode2 = audioContext.createGain();
+                    
+                    oscillator2.connect(gainNode2);
+                    gainNode2.connect(audioContext.destination);
+                    
+                    oscillator2.type = 'sine';
+                    oscillator2.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator2.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                    
+                    gainNode2.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode2.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator2.start(audioContext.currentTime);
+                    oscillator2.stop(audioContext.currentTime + 0.5);
+                }, 600);
+                
+                setTimeout(() => {
+                    const oscillator3 = audioContext.createOscillator();
+                    const gainNode3 = audioContext.createGain();
+                    
+                    oscillator3.connect(gainNode3);
+                    gainNode3.connect(audioContext.destination);
+                    
+                    oscillator3.type = 'sine';
+                    oscillator3.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator3.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                    
+                    gainNode3.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode3.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                    gainNode3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator3.start(audioContext.currentTime);
+                    oscillator3.stop(audioContext.currentTime + 0.5);
+                }, 1200);
+            } catch (e) {
+                console.log('Audio generation failed:', e);
+            }
+        }
+
         function showTimerDoneModal(stepIndex) {
             document.getElementById('timer-done-message').textContent = `步骤 ${stepIndex + 1} 完成！该进行下一步了。`;
             document.getElementById('timer-done-modal').classList.add('active');
             
             // 播放提示音
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3');
-            audio.play().catch(e => console.log('Audio play failed:', e));
+            playNotificationSound();
         }
 
         // 隐藏定时器完成提示模态框
