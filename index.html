@@ -162,9 +162,12 @@
                 <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7cfcf3a4faea4f0e88adfde2ec1f0655~tplv-a9rns2rl98-image.image?rcl=2025122416134330C67CF4A4EEB2DAE154&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1769156040&x-signature=7zcngvb6dpW8COHuW7L%2BgdqrcSs%3D" alt="小熊菜谱" class="w-10 h-10">
                 <h1 class="text-2xl font-bold text-gray-800">小熊菜谱</h1>
             </div>
-            <div class="flex items-center space-x-4">
-                <i data-lucide="search" class="text-gray-600"></i>
-                <i data-lucide="user" class="text-gray-600"></i>
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="搜索菜谱..." class="pl-9 pr-4 py-1 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-40 md:w-64">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                </div>
+                <i data-lucide="user" class="text-gray-600 cursor-pointer"></i>
             </div>
         </header>
         <main class="p-4">
@@ -1181,11 +1184,87 @@
             document.getElementById('recipe-count').textContent = recipes.length;
         }
 
+        // 搜索菜谱
+        function searchRecipes(searchTerm) {
+            const recipeList = document.getElementById('recipe-list');
+            recipeList.innerHTML = '';
+            
+            if (searchTerm === '') {
+                displayRecipes();
+                return;
+            }
+            
+            const filteredRecipes = recipes.filter(recipe => 
+                recipe.title.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredRecipes.length === 0) {
+                recipeList.innerHTML = `
+                    <div class="col-span-2 text-center py-8 text-gray-500">
+                        <i data-lucide="search" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                        <p>未找到匹配的菜谱</p>
+                        <p class="text-sm">试试其他关键词</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            filteredRecipes.forEach((recipe, index) => {
+                const originalIndex = recipes.findIndex(r => r.id === recipe.id);
+                const recipeCard = document.createElement('div');
+                recipeCard.className = 'recipe-card bg-white rounded-lg shadow-sm overflow-hidden';
+                
+                // 根据菜谱名称选择一个图标
+                let recipeIcon = 'utensils';
+                if (recipe.title.includes('肉')) recipeIcon = 'drumstick-bite';
+                else if (recipe.title.includes('鱼')) recipeIcon = 'fish';
+                else if (recipe.title.includes('蛋')) recipeIcon = 'egg';
+                else if (recipe.title.includes('汤')) recipeIcon = 'bowl-hot';
+                else if (recipe.title.includes('菜') || recipe.title.includes('蔬')) recipeIcon = 'carrot';
+                
+                recipeCard.innerHTML = `
+                    <div class="p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="${recipeIcon}" class="w-6 h-6 text-green-500 mr-2"></i>
+                            <h3 class="text-lg font-semibold">${recipe.title}</h3>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4">${recipe.description}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">${recipe.ingredients.length} 种食材 · ${recipe.steps.length} 个步骤</span>
+                            <div class="flex space-x-2">
+                                <button onclick="editRecipe(${originalIndex})" class="text-green-500 hover:text-green-700">
+                                    <i data-lucide="edit" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="showDeleteConfirmModal(${originalIndex})" class="text-red-500 hover:text-red-700">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-2 flex justify-end">
+                        <button onclick="viewRecipeDetail(${originalIndex})" class="text-green-500 hover:text-green-700 text-sm font-medium">
+                            查看详情 <i data-lucide="arrow-right" class="w-4 h-4 inline"></i>
+                        </button>
+                    </div>
+                `;
+                recipeList.appendChild(recipeCard);
+            });
+            lucide.createIcons();
+        }
+
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             displayRecipes();
             addEventListenersToForm();
             updateRecipeCount();
+            
+            // 为搜索框添加事件监听
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                searchRecipes(searchTerm);
+            });
             
             // 添加一些示例数据（如果没有菜谱的话）
             if (recipes.length === 0) {
