@@ -427,6 +427,26 @@
     <script>
         function initSwipeGestures() {
             const recipeCards = document.querySelectorAll('.recipe-card-container');
+            let currentlyExpandedCard = null;
+
+            // 全局点击事件处理函数
+            const handleGlobalClick = (e) => {
+                // 如果点击的不是当前展开的卡片及其子元素
+                if (currentlyExpandedCard && !currentlyExpandedCard.contains(e.target)) {
+                    const cardContent = currentlyExpandedCard.querySelector('.recipe-card-content');
+                    const cardActions = currentlyExpandedCard.querySelector('.recipe-card-actions');
+                    
+                    if (cardContent && cardContent.style.transform === 'translateX(-128px)') {
+                        cardContent.style.transform = 'translateX(0)';
+                        cardActions.style.transform = 'translateX(100%)';
+                        currentlyExpandedCard = null;
+                    }
+                }
+            };
+
+            // 添加全局点击事件监听器
+            document.addEventListener('click', handleGlobalClick);
+
             recipeCards.forEach(card => {
                 const cardContent = card.querySelector('.recipe-card-content');
                 let startX = 0;
@@ -437,6 +457,14 @@
                     startX = e.touches[0].clientX;
                     isDragging = true;
                     cardContent.style.transition = 'none';
+                    
+                    // 如果有其他卡片处于展开状态，先将其关闭
+                    if (currentlyExpandedCard && currentlyExpandedCard !== card) {
+                        const otherCardContent = currentlyExpandedCard.querySelector('.recipe-card-content');
+                        const otherCardActions = currentlyExpandedCard.querySelector('.recipe-card-actions');
+                        otherCardContent.style.transform = 'translateX(0)';
+                        otherCardActions.style.transform = 'translateX(100%)';
+                    }
                 };
 
                 const handleTouchMove = (e) => {
@@ -467,9 +495,13 @@
                     if (diffX < -64) {
                         cardContent.style.transform = 'translateX(-128px)';
                         card.querySelector('.recipe-card-actions').style.transform = 'translateX(0%)';
+                        currentlyExpandedCard = card;
                     } else {
                         cardContent.style.transform = 'translateX(0)';
                         card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
+                        if (currentlyExpandedCard === card) {
+                            currentlyExpandedCard = null;
+                        }
                     }
                 };
 
@@ -477,6 +509,7 @@
                     if (cardContent.style.transform === 'translateX(-128px)') {
                         cardContent.style.transform = 'translateX(0)';
                         card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
+                        currentlyExpandedCard = null;
                     }
                 };
 
