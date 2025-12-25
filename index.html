@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小熊菜谱</title>
+    <title>小熊厨师</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.544.0/dist/umd/lucide.min.js"></script>
     <style>
@@ -168,9 +168,9 @@
     <!-- 主页 -->
     <div id="home-page" class="page active">
         <header class="bg-white shadow-md p-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7cfcf3a4faea4f0e88adfde2ec1f0655~tplv-a9rns2rl98-image.image?rcl=2025122416134330C67CF4A4EEB2DAE154&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1769156040&x-signature=7zcngvb6dpW8COHuW7L%2BgdqrcSs%3D" alt="小熊菜谱" class="w-10 h-10">
-                <h1 class="text-2xl font-bold text-gray-800">小熊菜谱</h1>
+            <div class="flex items-center space-x-2 flex-shrink-0">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7cfcf3a4faea4f0e88adfde2ec1f0655~tplv-a9rns2rl98-image.image?rcl=2025122416134330C67CF4A4EEB2DAE154&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1769156040&x-signature=7zcngvb6dpW8COHuW7L%2BgdqrcSs%3D" alt="小熊厨师" class="w-9 h-9">
+                <h1 class="text-xl font-bold text-gray-800 whitespace-nowrap">小熊厨师</h1>
             </div>
             <div class="flex items-center space-x-3">
                 <div class="relative">
@@ -181,6 +181,17 @@
             </div>
         </header>
         <main class="p-4">
+            <!-- 月度统计卡片 -->
+            <div id="monthly-stats" class="mb-6 bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">本月已烹饪</p>
+                    <p class="text-2xl font-bold text-green-500"><span id="cooking-count">0</span> 道菜</p>
+                </div>
+                <div class="bg-green-50 p-3 rounded-full">
+                    <i data-lucide="trophy" class="w-8 h-8 text-green-500"></i>
+                </div>
+            </div>
+
             <div class="mb-6">
                 <h2 class="text-xl font-semibold mb-4">我的菜谱</h2>
                 <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -518,6 +529,7 @@
             
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
             updateRecipeCount();
         }
 
@@ -536,6 +548,7 @@
                 `;
                 lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
                 return;
             }
 
@@ -588,6 +601,7 @@
             
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
         }
 
         // 查看菜谱详情
@@ -629,6 +643,7 @@
             const finishBtn = document.getElementById('finish-cooking-btn');
             finishBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                recordCookingCompletion();
                 navigateTo('home-page');
             });
             
@@ -710,6 +725,7 @@
             });
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
         }
 
         // 调整份数
@@ -825,6 +841,72 @@
 
         // 显示定时器完成提示模态框
         // 播放提示音
+        // 记录烹饪完成
+        function recordCookingCompletion() {
+            const today = new Date();
+            const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            
+            let cookingRecords = JSON.parse(localStorage.getItem('cookingRecords')) || {};
+            
+            if (!cookingRecords[yearMonth]) {
+                cookingRecords[yearMonth] = 0;
+            }
+            
+            cookingRecords[yearMonth]++;
+            localStorage.setItem('cookingRecords', JSON.stringify(cookingRecords));
+            
+            // 更新显示
+            updateCookingStats();
+            
+            // 显示成功提示
+            showToast('恭喜你完成了一道菜！');
+        }
+
+        // 更新烹饪统计显示
+        function updateCookingStats() {
+            const today = new Date();
+            const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            
+            let cookingRecords = JSON.parse(localStorage.getItem('cookingRecords')) || {};
+            const count = cookingRecords[yearMonth] || 0;
+            
+            const countElement = document.getElementById('cooking-count');
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+
+        // 显示提示消息
+        function showToast(message) {
+            // 创建提示元素
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out';
+            toast.textContent = message;
+            
+            // 添加动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fade-in-out {
+                    0% { opacity: 0; transform: translate(-50%, 20px); }
+                    10% { opacity: 1; transform: translate(-50%, 0); }
+                    90% { opacity: 1; transform: translate(-50%, 0); }
+                    100% { opacity: 0; transform: translate(-50%, -20px); }
+                }
+                .animate-fade-in-out {
+                    animation: fade-in-out 3s ease-in-out forwards;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(toast);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                toast.remove();
+                style.remove();
+            }, 3000);
+        }
+
         function playNotificationSound() {
             try {
                 // 创建音频上下文
@@ -925,6 +1007,7 @@
                 document.getElementById('delete-confirm-modal').classList.add('active');
                 lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
             }
         }
 
@@ -951,6 +1034,7 @@
             document.getElementById('add-recipe-modal').classList.add('active');
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
         }
 
         // 隐藏添加菜谱模态框
@@ -992,6 +1076,7 @@
             addEventListenersToForm();
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
         }
 
         // 添加食材输入框
@@ -1010,6 +1095,7 @@
             container.appendChild(newInput);
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
             
             // 添加删除按钮事件监听
             newInput.querySelector('.remove-ingredient').addEventListener('click', () => {
@@ -1038,6 +1124,7 @@
             container.appendChild(newInput);
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
             
             // 添加删除按钮和计时复选框事件监听
             newInput.querySelector('.remove-step').addEventListener('click', () => {
@@ -1374,6 +1461,7 @@
                 `;
                 lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
                 return;
             }
 
@@ -1421,6 +1509,7 @@
             });
             lucide.createIcons();
             initSwipeGestures();
+            updateCookingStats();
         }
 
         // 初始化
