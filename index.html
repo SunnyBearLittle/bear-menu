@@ -362,10 +362,10 @@
                             <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
                             <div class="flex items-center justify-between mt-1">
                                 <label class="text-sm text-gray-600 flex items-center">
-                                    <input type="checkbox" name="step-timer-enabled[]" class="mr-2">
+                                    <input type="checkbox" name="step-timer-enabled[0]" class="mr-2">
                                     需要计时
                                 </label>
-                                <input type="number" name="step-timer-minutes[]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                                <input type="number" name="step-timer-minutes[0]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
                                 <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
@@ -655,6 +655,13 @@
             currentRecipe = recipes[index];
             document.getElementById('detail-recipe-title').textContent = currentRecipe.title;
             
+            // 调试：显示当前菜谱的步骤数据
+            console.log('查看菜谱详情 - 当前菜谱:', currentRecipe.title);
+            console.log('步骤数据:', currentRecipe.steps);
+            currentRecipe.steps.forEach((step, i) => {
+                console.log(`步骤 ${i + 1}:`, step);
+            });
+            
             const detailContent = document.getElementById('recipe-detail-content');
             detailContent.innerHTML = `
                 <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
@@ -752,7 +759,12 @@
             const stepsList = document.getElementById('steps-list');
             stepsList.innerHTML = '';
             
+            console.log('显示步骤列表 - 当前菜谱:', currentRecipe.title);
+            console.log('步骤数据:', currentRecipe.steps);
+            
             currentRecipe.steps.forEach((step, index) => {
+                console.log(`步骤 ${index + 1}:`, step);
+                
                 const stepCard = document.createElement('div');
                 stepCard.className = `step-card bg-white p-4 rounded-lg shadow-sm ${index === 0 ? 'active' : ''}`;
                 stepCard.innerHTML = `
@@ -1239,6 +1251,9 @@
             document.getElementById('add-recipe-modal').classList.remove('active');
             document.getElementById('add-recipe-form').reset();
             currentRecipeIndex = -1;
+            // 清除编辑索引
+            document.getElementById('add-recipe-form').dataset.editIndex = -1;
+            console.log('隐藏添加菜谱模态框，清除编辑索引');
             
             // 重置食材和步骤输入框
             const ingredientsContainer = document.getElementById('ingredients-input-container');
@@ -1305,16 +1320,17 @@
         // 添加步骤输入框
         document.getElementById('add-step-btn').addEventListener('click', () => {
             const container = document.getElementById('steps-input-container');
+            const stepIndex = container.children.length; // 获取当前步骤索引
             const newInput = document.createElement('div');
             newInput.className = 'step-input';
             newInput.innerHTML = `
                 <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
                 <div class="flex items-center justify-between mt-1">
                     <label class="text-sm text-gray-600 flex items-center">
-                        <input type="checkbox" name="step-timer-enabled[]" class="mr-2">
+                        <input type="checkbox" name="step-timer-enabled[${stepIndex}]" class="mr-2">
                         需要计时
                     </label>
-                    <input type="number" name="step-timer-minutes[]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                    <input type="number" name="step-timer-minutes[${stepIndex}]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
                     <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
@@ -1331,12 +1347,15 @@
                 newInput.remove();
             });
             
-            const timerCheckbox = newInput.querySelector('input[name="step-timer-enabled[]"]');
-            const timerInput = newInput.querySelector('input[name="step-timer-minutes[]"]');
+            // 查找计时复选框和分钟输入框（使用属性选择器）
+            const timerCheckbox = newInput.querySelector('input[name^="step-timer-enabled"]');
+            const timerInput = newInput.querySelector('input[name^="step-timer-minutes"]');
             
-            timerCheckbox.addEventListener('change', () => {
-                timerInput.disabled = !timerCheckbox.checked;
-            });
+            if (timerCheckbox && timerInput) {
+                timerCheckbox.addEventListener('change', () => {
+                    timerInput.disabled = !timerCheckbox.checked;
+                });
+            }
         });
 
         // 为表单元素添加事件监听器
@@ -1384,9 +1403,38 @@
             const ingredientAmounts = formData.getAll('ingredient-amount[]');
             const ingredientUnits = formData.getAll('ingredient-unit[]');
             
+            // 获取所有步骤描述
             const stepDescriptions = formData.getAll('step-description[]');
-            const stepTimerEnabled = formData.getAll('step-timer-enabled[]');
-            const stepTimerMinutes = formData.getAll('step-timer-minutes[]');
+            console.log('步骤描述数量:', stepDescriptions.length);
+            
+            // 处理计时设置
+            const stepTimerEnabled = [];
+            const stepTimerMinutes = [];
+            
+            // 遍历所有步骤
+            for (let i = 0; i < stepDescriptions.length; i++) {
+                // 检查该步骤是否启用了计时（复选框是否选中）
+                const timerEnabled = formData.has(`step-timer-enabled[${i}]`);
+                // 获取计时分钟数
+                const minutesInput = formData.get(`step-timer-minutes[${i}]`);
+                const minutes = timerEnabled && minutesInput ? parseInt(minutesInput) || 0 : 0;
+                
+                stepTimerEnabled.push(timerEnabled);
+                stepTimerMinutes.push(minutes);
+                
+                console.log(`步骤 ${i + 1} 计时设置:`, {
+                    enabled: timerEnabled,
+                    minutes: minutes,
+                    hasTimerCheckbox: formData.has(`step-timer-enabled[${i}]`),
+                    minutesInput: minutesInput
+                });
+            }
+            
+            // 显示FormData中的所有键值对，用于调试
+            console.log('FormData中的所有数据:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
             
             const ingredients = ingredientNames.map((name, index) => ({
                 name: name.trim(),
@@ -1394,24 +1442,37 @@
                 unit: ingredientUnits[index].trim()
             }));
             
-            const steps = stepDescriptions.map((description, index) => ({
-                description: description.trim(),
-                timerEnabled: stepTimerEnabled[index] === 'on',
-                timerMinutes: stepTimerEnabled[index] === 'on' ? parseInt(stepTimerMinutes[index]) : 0
-            }));
+            // 处理步骤数据
+            const steps = stepDescriptions.map((description, index) => {
+                console.log(`步骤 ${index + 1} 最终数据:`, {
+                    description: description.trim(),
+                    timerEnabled: stepTimerEnabled[index],
+                    timerMinutes: stepTimerMinutes[index]
+                });
+                
+                return {
+                    description: description.trim(),
+                    timerEnabled: stepTimerEnabled[index],
+                    timerMinutes: stepTimerMinutes[index]
+                };
+            });
+            
+            // 获取编辑索引
+            const editIndex = parseInt(this.dataset.editIndex) || -1;
             
             const newRecipe = {
-                id: currentRecipeIndex >= 0 ? recipes[currentRecipeIndex].id : Date.now().toString(),
+                id: editIndex >= 0 ? recipes[editIndex].id : Date.now().toString(),
                 title: title.trim(),
                 description: description.trim(),
                 ingredients,
                 steps,
-                createdAt: currentRecipeIndex >= 0 ? recipes[currentRecipeIndex].createdAt : new Date().toISOString()
+                createdAt: editIndex >= 0 ? recipes[editIndex].createdAt : new Date().toISOString()
             };
             
-            if (currentRecipeIndex >= 0) {
-                recipes[currentRecipeIndex] = newRecipe;
-                currentRecipeIndex = -1;
+            if (editIndex >= 0) {
+                recipes[editIndex] = newRecipe;
+                // 清除编辑索引
+                this.dataset.editIndex = -1;
             } else {
                 recipes.push(newRecipe);
             }
@@ -1455,16 +1516,37 @@
                     <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>${step.description}</textarea>
                     <div class="flex items-center justify-between mt-1">
                         <label class="text-sm text-gray-600 flex items-center">
-                            <input type="checkbox" name="step-timer-enabled[]" class="mr-2" ${step.timerEnabled ? 'checked' : ''}>
+                            <input type="checkbox" name="step-timer-enabled[${i}]" class="mr-2" ${step.timerEnabled ? 'checked' : ''}>
                             需要计时
                         </label>
-                        <input type="number" name="step-timer-minutes[]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${step.timerMinutes}" ${!step.timerEnabled ? 'disabled' : ''}>
+                        <input type="number" name="step-timer-minutes[${i}]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${step.timerMinutes}" ${!step.timerEnabled ? 'disabled' : ''}>
                         <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
                 `;
                 stepsContainer.appendChild(inputGroup);
+                
+                // 为新添加的步骤添加事件监听器
+                const removeBtn = inputGroup.querySelector('.remove-step');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        if (document.querySelectorAll('.step-input').length > 1) {
+                            inputGroup.remove();
+                        } else {
+                            showToast('至少需要一个步骤');
+                        }
+                    });
+                }
+                
+                // 添加计时复选框事件监听
+                const timerCheckbox = inputGroup.querySelector('input[name^="step-timer-enabled"]');
+                const timerInput = inputGroup.querySelector('input[name^="step-timer-minutes"]');
+                if (timerCheckbox && timerInput) {
+                    timerCheckbox.addEventListener('change', () => {
+                        timerInput.disabled = !timerCheckbox.checked;
+                    });
+                }
             });
 
             // 显示模态框并更新标题
@@ -1476,6 +1558,8 @@
 
             // 存储当前编辑的索引
             document.getElementById('add-recipe-form').dataset.editIndex = index;
+            
+            console.log('编辑菜谱:', recipe.title, '索引:', index);
         }
 
         // 确认删除菜谱
