@@ -1,11 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小熊厨师</title>
+    <title>小熊厨师 - Vue版</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Lucide Icons -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#22c55e',
+                        'primary-dark': '#16a34a',
+                        'primary-light': '#dcfce7'
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
         :root {
             --primary-color: #22c55e;
@@ -14,71 +35,49 @@
             --neutral-medium: #e2e8f0;
             --neutral-dark: #64748b;
         }
+        
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #f8fafc;
             color: #1e293b;
         }
+        
         .page {
             display: none;
             animation: fadeIn 0.5s ease-in-out;
         }
+        
         .page.active {
             display: block;
         }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
         .recipe-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+        
         .recipe-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        
         .recipe-card-container {
             touch-action: pan-y;
         }
+        
         .recipe-card-content {
             will-change: transform;
         }
+        
         .recipe-card-actions {
             width: 128px;
             transform: translateX(100%);
         }
-        .progress-ring {
-            transform: rotate(-90deg);
-        }
-        .progress-ring__circle {
-            transition: stroke-dashoffset 0.35s;
-            stroke-width: 8;
-            stroke-dasharray: 283;
-            stroke-dashoffset: 283;
-            stroke-linecap: round;
-            fill: none;
-            stroke: var(--primary-color);
-        }
-        .timer-container {
-            position: relative;
-            width: 150px;
-            height: 150px;
-        }
-        .timer-display {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        .step-card {
-            transition: background-color 0.3s ease;
-        }
-        .step-card.active {
-            background-color: #dcfce7;
-            border-left: 4px solid var(--primary-color);
-        }
+        
         .floating-action-button {
             position: fixed;
             bottom: 80px;
@@ -91,1780 +90,1466 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, background-color 0.3s ease;
             z-index: 100;
         }
+        
         .floating-action-button:hover {
             transform: scale(1.1);
             background-color: var(--primary-dark);
         }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
-            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
-            z-index: 50;
-        }
-        .nav-item {
-            transition: color 0.3s ease;
-        }
-        .nav-item.active {
-            color: var(--primary-color);
-        }
+        
         .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             animation: fadeIn 0.3s ease;
         }
+        
         .modal.active {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
+        
         .modal-content {
             background-color: white;
-            border-radius: 1rem;
-            padding: 2rem;
+            padding: 24px;
+            border-radius: 12px;
             width: 90%;
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
             animation: slideIn 0.3s ease;
         }
+        
         @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
+            from { transform: translateY(-20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+        
         .toast {
             position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 20px;
+            right: 20px;
             background-color: #1e293b;
             color: white;
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            z-index: 1001;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
         }
+        
         .toast.active {
-            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            stroke-width: 8;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            stroke-linecap: round;
+            fill: none;
+            stroke: var(--primary-color);
+        }
+        
+        .timer-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .timer-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .step-card {
+            transition: background-color 0.3s ease;
+        }
+        
+        .step-card.active {
+            background-color: #dcfce7;
+            border-left: 4px solid var(--primary-color);
         }
     </style>
 </head>
-<body class="pb-20">
-
-    <!-- 主页 -->
-    <div id="home-page" class="page active">
-        <header class="bg-white shadow-md p-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2 flex-shrink-0">
-                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7cfcf3a4faea4f0e88adfde2ec1f0655~tplv-a9rns2rl98-image.image?rcl=2025122416134330C67CF4A4EEB2DAE154&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1769156040&x-signature=7zcngvb6dpW8COHuW7L%2BgdqrcSs%3D" alt="小熊厨师" class="w-9 h-9">
-                <h1 class="text-xl font-bold text-gray-800 whitespace-nowrap">小熊厨师</h1>
-            </div>
-            <div class="flex items-center">
-                <div class="relative">
-                    <input type="text" id="search-input" placeholder="搜索菜谱..." class="pl-9 pr-4 py-1 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-64">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                </div>
-            </div>
-        </header>
-        <main class="p-4">
-            <!-- 月度统计卡片 -->
-            <div id="monthly-stats" class="mb-6 bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">本月已烹饪</p>
-                    <p class="text-2xl font-bold text-green-500"><span id="cooking-count">0</span> 道菜</p>
-                </div>
-                <div class="bg-green-50 p-3 rounded-full">
-                    <i data-lucide="trophy" class="w-8 h-8 text-green-500"></i>
-                </div>
-            </div>
-
-            <!-- 菜品排行榜 -->
-            <div class="mb-6 bg-white rounded-lg shadow-sm p-4">
-                <h3 class="text-lg font-semibold mb-4 flex items-center">
-                    <i data-lucide="star" class="w-5 h-5 text-yellow-400 mr-2"></i>
-                    本月烹饪排行
-                </h3>
-                <div id="top-recipes-chart">
-                    <!-- 图表将在这里动态生成 -->
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <h2 class="text-xl font-semibold mb-4">我的菜谱</h2>
-                <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- 菜谱卡片将在这里动态生成 -->
-                </div>
-            </div>
-        </main>
-        <div class="floating-action-button" onclick="showAddRecipeModal()">
-            <i data-lucide="plus" class="w-8 h-8"></i>
-        </div>
-    </div>
-
-    <!-- 菜谱详情页 -->
-    <div id="recipe-detail-page" class="page">
-        <header class="bg-white shadow-md p-4 flex items-center">
-            <button onclick="navigateTo('home-page')" class="mr-4">
-                <i data-lucide="arrow-left" class="text-gray-600"></i>
-            </button>
-            <h1 id="detail-recipe-title" class="text-xl font-bold text-gray-800">菜谱详情</h1>
-        </header>
-        <main class="p-4">
-            <div id="recipe-detail-content" class="space-y-6">
-                <!-- 菜谱详情内容将在这里动态生成 -->
-            </div>
-            <button id="start-cooking-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-6" style="cursor: pointer; user-select: none;">
-                开始制作
-            </button>
-        </main>
-    </div>
-
-    <!-- 食品制作页面 -->
-    <div id="cooking-page" class="page">
-        <header class="bg-white shadow-md p-4 flex items-center">
-            <button onclick="navigateTo('recipe-detail-page')" class="mr-4">
-                <i data-lucide="arrow-left" class="text-gray-600"></i>
-            </button>
-            <h1 id="cooking-recipe-title" class="text-xl font-bold text-gray-800">食品制作</h1>
-        </header>
-        <main class="p-4">
-            <!-- 食材准备部分 -->
-            <div id="ingredients-section" class="mb-8">
-                <h2 class="text-xl font-semibold mb-4">食材准备</h2>
-                <div id="serving-adjuster" class="flex items-center justify-between mb-4">
-                    <span class="font-medium">份数:</span>
-                    <div class="flex items-center space-x-4">
-                        <button id="decrease-servings" class="bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full flex items-center justify-center">
-                            <i data-lucide="minus" class="w-5 h-5"></i>
-                        </button>
-                        <span id="serving-count" class="text-lg font-semibold">1</span>
-                        <button id="increase-servings" class="bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full flex items-center justify-center">
-                            <i data-lucide="plus" class="w-5 h-5"></i>
-                        </button>
+<body class="min-h-screen">
+    <div id="app" class="relative pb-20">
+        <!-- 主页 -->
+        <div id="home-page" class="page active">
+            <header class="bg-white shadow-md p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-2xl font-bold text-gray-800">小熊厨师</h1>
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input 
+                            v-model="searchTerm"
+                            type="text" 
+                            placeholder="搜索菜谱..." 
+                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            @input="handleSearch"
+                        >
                     </div>
                 </div>
-                <div id="ingredients-list" class="space-y-3">
-                    <!-- 食材列表将在这里动态生成 -->
-                </div>
-            </div>
-
-            <!-- 步骤及定时部分 -->
-            <div id="steps-section">
-                <h2 class="text-xl font-semibold mb-4">烹饪步骤</h2>
-                <div id="steps-list" class="space-y-4">
-                    <!-- 步骤列表将在这里动态生成 -->
-                </div>
-            </div>
-            <button id="finish-cooking-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-6" style="cursor: pointer; user-select: none;">
-                完成制作
-            </button>
-        </main>
-    </div>
-
-    <!-- 个人资料页面 -->
-    <div id="profile-page" class="page">
-        <header class="bg-white shadow-md p-4">
-            <h1 class="text-2xl font-bold text-gray-800 text-center">个人资料</h1>
-        </header>
-        <main class="p-4">
-            <div class="flex flex-col items-center mb-8">
-                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <i data-lucide="user" class="w-12 h-12 text-green-500"></i>
-                </div>
-                <h2 class="text-xl font-semibold">厨师之名</h2>
-                <p class="text-gray-600">美食爱好者</p>
-            </div>
-            <div class="space-y-4">
-                <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
-                    <span class="font-medium">我的菜谱</span>
-                    <span id="recipe-count" class="text-green-500 font-semibold">0</span>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
-                    <span class="font-medium">设置</span>
-                    <i data-lucide="chevron-right" class="text-gray-400"></i>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
-                    <span class="font-medium">关于我们</span>
-                    <i data-lucide="chevron-right" class="text-gray-400"></i>
-                </div>
-                <button id="export-data-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-6">
-                    导出数据 (CSV)
-                </button>
-                <input type="file" id="import-data-input" accept=".csv" class="hidden">
-                <button id="import-data-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-4">
-                    导入数据 (CSV)
-                </button>
-                <button id="clear-data-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-4">
-                    清除所有数据
-                </button>
-            </div>
-        </main>
-    </div>
-
-    <!-- 底部导航栏 -->
-    <nav class="bottom-nav flex justify-around items-center h-16">
-        <div class="nav-item active flex flex-col items-center justify-center" onclick="navigateTo('home-page')">
-            <i data-lucide="home" class="w-6 h-6"></i>
-            <span class="text-xs mt-1">首页</span>
-        </div>
-        <div class="nav-item flex flex-col items-center justify-center" onclick="navigateTo('profile-page')">
-            <i data-lucide="user" class="w-6 h-6"></i>
-            <span class="text-xs mt-1">我的</span>
-        </div>
-    </nav>
-
-    <!-- 添加菜谱模态框 -->
-    <div id="add-recipe-modal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">添加新菜谱</h2>
-            <form id="add-recipe-form" class="space-y-4">
-                <div>
-                    <label for="recipe-title" class="block text-sm font-medium text-gray-700 mb-1">菜谱名称</label>
-                    <input type="text" id="recipe-title" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                </div>
-                <div>
-                    <label for="recipe-description" class="block text-sm font-medium text-gray-700 mb-1">描述</label>
-                    <textarea id="recipe-description" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">食材</label>
-                    <div id="ingredients-input-container" class="space-y-2">
-                        <div class="ingredient-input flex space-x-2">
-                            <input type="text" name="ingredient-name[]" placeholder="食材名称" class="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                            <input type="number" name="ingredient-amount[]" placeholder="数量" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                            <input type="text" name="ingredient-unit[]" placeholder="单位" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                            <button type="button" class="remove-ingredient bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" id="add-ingredient-btn" class="mt-2 text-green-500 hover:text-green-700 flex items-center">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> 添加食材
-                    </button>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">步骤</label>
-                    <div id="steps-input-container" class="space-y-2">
-                        <div class="step-input">
-                            <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
-                            <div class="flex items-center justify-between mt-1">
-                                <label class="text-sm text-gray-600 flex items-center">
-                                    <input type="checkbox" name="step-timer-enabled[0]" class="mr-2">
-                                    需要计时
-                                </label>
-                                <input type="number" name="step-timer-minutes[0]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
-                                <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
+                
+                <!-- 统计信息 -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">本月已烹饪</p>
+                                <p class="text-2xl font-bold text-green-600">{{ cookingStats.total }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="trophy" class="w-6 h-6 text-green-500"></i>
                             </div>
                         </div>
                     </div>
-                    <button type="button" id="add-step-btn" class="mt-2 text-green-500 hover:text-green-700 flex items-center">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> 添加步骤
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">我的菜谱</p>
+                                <p class="text-2xl font-bold text-blue-600">{{ recipes?.length || 0 }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="book-open" class="w-6 h-6 text-blue-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <main class="p-4">
+                <!-- 菜品排行榜 -->
+                <div class="mb-6 bg-white rounded-lg shadow-sm p-4">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 mr-2"></i>
+                        本月烹饪排行
+                    </h3>
+                    <div id="top-recipes-chart">
+                        <div v-if="!topRecipes || topRecipes.length === 0" class="text-center py-8 text-gray-500">
+                            <i data-lucide="chart-bar" class="w-12 h-12 mx-auto mb-4 opacity-50"></i>
+                            <p>本月还没有烹饪记录</p>
+                            <p class="text-sm">完成制作后，这里会显示您的烹饪排行榜</p>
+                        </div>
+                        <div v-else-if="topRecipes" class="space-y-4 py-4">
+                            <div 
+                                v-for="(recipe, index) in topRecipes" 
+                                :key="recipe.name"
+                                class="group"
+                            >
+                                <div class="flex justify-between items-center mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg">{{ getRankIcon(index) }}</span>
+                                        <span class="text-sm font-medium text-gray-700 truncate max-w-[120px] group-hover:text-green-600 transition-colors">
+                                            {{ recipe.name }}
+                                        </span>
+                                    </div>
+                                    <span class="text-sm font-semibold text-gray-700">{{ recipe.count }} 次</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                        class="h-2 rounded-full transition-all duration-500 ease-out"
+                                        :class="getBarColor(index)"
+                                        :style="{ width: getBarWidth(recipe.count) + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 菜谱列表 -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">我的菜谱</h2>
+                    <div v-if="!filteredRecipes || filteredRecipes.length === 0" class="text-center py-8 text-gray-500">
+                        <i data-lucide="book" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                        <p>{{ searchTerm ? '未找到匹配的菜谱' : '还没有添加任何菜谱' }}</p>
+                        <p class="text-sm">{{ searchTerm ? '试试其他关键词' : '点击右下角的加号按钮添加' }}</p>
+                    </div>
+                    <div v-else-if="filteredRecipes" class="space-y-4" id="recipe-list">
+                        <div 
+                            v-for="(recipe, index) in filteredRecipes" 
+                            :key="recipe.id"
+                            class="recipe-card-container relative overflow-hidden rounded-lg shadow-sm mb-4"
+                            :data-index="index"
+                        >
+                            <div class="recipe-card-actions absolute top-0 right-0 h-full flex z-10 transition-transform duration-300">
+                                <button @click="editRecipe(recipe)" class="bg-white text-green-500 w-16 h-full flex items-center justify-center hover:bg-green-50 transition-colors">
+                                    <i data-lucide="edit" class="w-5 h-5"></i>
+                                </button>
+                                <button @click="showDeleteConfirmModal(recipe)" class="bg-white text-red-500 w-16 h-full flex items-center justify-center hover:bg-red-50 transition-colors">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div 
+                                class="recipe-card-content bg-white rounded-lg shadow-sm overflow-hidden transform transition-transform duration-300 cursor-pointer hover:shadow-md"
+                                @click="viewRecipeDetail(recipe)"
+                                @touchstart="handleTouchStart($event, index)"
+                                @touchmove="handleTouchMove($event, index)"
+                                @touchend="handleTouchEnd($event, index)"
+                            >
+                                <div class="p-4">
+                                    <div class="flex items-center mb-2">
+                                        <i :data-lucide="getRecipeIcon(recipe.title)" class="w-6 h-6 text-green-500 mr-2"></i>
+                                        <h3 class="text-lg font-semibold">{{ recipe.title }}</h3>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ recipe.description }}</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs text-gray-500">{{ recipe.ingredients?.length || 0 }} 种食材 · {{ recipe.steps?.length || 0 }} 个步骤</span>
+                                        <span class="text-xs text-gray-400">左滑编辑</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">{{ formatDate(recipe.createdAt) }}</span>
+                                    <button @click.stop="viewRecipeDetail(recipe)" class="text-green-500 hover:text-green-700 text-sm font-medium flex items-center">
+                                        查看详情 <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- 浮动添加按钮 -->
+            <div class="floating-action-button" @click="showAddRecipeModal">
+                <i data-lucide="plus" class="w-8 h-8"></i>
+            </div>
+        </div>
+        
+        <!-- 菜谱详情页 -->
+        <div id="recipe-detail-page" class="page">
+            <header class="bg-white shadow-md p-4 flex items-center">
+                <button @click="navigateTo('home-page')" class="mr-4">
+                    <i data-lucide="arrow-left" class="text-gray-600"></i>
+                </button>
+                <h1 id="detail-recipe-title" class="text-xl font-bold text-gray-800">{{ currentRecipe.title }}</h1>
+            </header>
+            <main class="p-4">
+                <div id="recipe-detail-content" class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-2">描述</h3>
+                        <p class="text-gray-600">{{ currentRecipe.description }}</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-semibold">食材</h3>
+                            <button @click="showAdjustIngredientsModal" class="text-sm text-green-500 hover:text-green-700">
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4 inline mr-1"></i> 调整用量
+                            </button>
+                        </div>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li v-for="ingredient in adjustedIngredients" :key="ingredient.name" class="flex justify-between">
+                                <span>{{ ingredient.name }}</span>
+                                <span class="font-medium">{{ ingredient.amount }} {{ ingredient.unit }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-2">烹饪步骤</h3>
+                        <div class="space-y-3">
+                            <div 
+                                v-for="(step, index) in currentRecipe.steps" 
+                                :key="index"
+                                class="step-card p-3 rounded-lg border border-gray-200"
+                            >
+                                <div class="flex items-start">
+                                    <div class="bg-green-100 text-green-700 w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                        {{ index + 1 }}
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-gray-700 mb-2">{{ step.description }}</p>
+                                        <div v-if="step.timerEnabled" class="flex items-center text-sm text-gray-500">
+                                            <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
+                                            <span>{{ step.timerMinutes }} 分钟</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="start-cooking-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-6" @click="startCooking">
+                    开始制作
+                </button>
+            </main>
+        </div>
+        
+        <!-- 烹饪页面 -->
+        <div id="cooking-page" class="page">
+            <header class="bg-white shadow-md p-4 flex items-center">
+                <button @click="stopCooking" class="mr-4">
+                    <i data-lucide="x" class="text-gray-600"></i>
+                </button>
+                <h1 class="text-xl font-bold text-gray-800">正在烹饪: {{ currentRecipe.title }}</h1>
+            </header>
+            <main class="p-4">
+                <div class="space-y-6">
+                    <!-- 计时器 -->
+                    <div v-if="currentStep.timerEnabled" class="bg-white rounded-lg shadow-sm p-6 text-center">
+                        <div class="timer-container mx-auto">
+                            <svg class="progress-ring w-full h-full" viewBox="0 0 100 100">
+                                <circle class="progress-ring__circle" stroke="#22c55e" stroke-width="8" fill="transparent" r="44" cx="50" cy="50" />
+                            </svg>
+                            <div class="timer-display">
+                                <span id="timer-minutes">{{ formatTime(timerMinutes) }}</span>:<span id="timer-seconds">{{ formatTime(timerSeconds) }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm text-gray-600">
+                            {{ currentStep.description }}
+                        </div>
+                        <div class="flex justify-center space-x-4 mt-6">
+                            <button id="pause-timer-btn" @click="toggleTimer" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
+                                {{ isTimerRunning ? '暂停' : '继续' }}
+                            </button>
+                            <button id="stop-timer-btn" @click="stopTimer" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                                停止
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前步骤 -->
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h3 class="text-lg font-semibold mb-3">当前步骤</h3>
+                        <div class="step-card active p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <div class="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                    {{ currentStepIndex + 1 }}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-gray-700 mb-2">{{ currentStep.description }}</p>
+                                    <div v-if="currentStep.timerEnabled" class="flex items-center text-sm text-green-600">
+                                        <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
+                                        <span>{{ currentStep.timerMinutes }} 分钟</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤列表 -->
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h3 class="text-lg font-semibold mb-3">步骤进度</h3>
+                        <div class="space-y-2">
+                            <div 
+                                v-for="(step, index) in currentRecipe.steps" 
+                                :key="index"
+                                class="step-card p-3 rounded-lg border border-gray-200 cursor-pointer"
+                                :class="{ 'active': index === currentStepIndex, 'opacity-50': index < currentStepIndex }"
+                                @click="goToStep(index)"
+                            >
+                                <div class="flex items-center">
+                                    <div 
+                                        class="w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
+                                        :class="index < currentStepIndex ? 'bg-green-500 text-white' : index === currentStepIndex ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                                    >
+                                        <i v-if="index < currentStepIndex" data-lucide="check" class="w-4 h-4"></i>
+                                        <span v-else>{{ index + 1 }}</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-700 truncate">{{ step.description }}</p>
+                                    </div>
+                                    <div v-if="step.timerEnabled" class="flex items-center text-xs text-gray-500">
+                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                        <span>{{ step.timerMinutes }}分钟</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 底部操作按钮 -->
+                <div class="fixed bottom-20 left-0 right-0 p-4 bg-white border-t border-gray-200">
+                    <div class="flex space-x-4">
+                        <button 
+                            @click="previousStep" 
+                            class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="currentStepIndex === 0"
+                        >
+                            上一步
+                        </button>
+                        <button 
+                            v-if="currentRecipe && currentRecipe.steps && currentStepIndex < currentRecipe.steps.length - 1"
+                            @click="nextStep" 
+                            class="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                        >
+                            下一步
+                        </button>
+                        <button 
+                            v-else
+                            @click="finishCooking" 
+                            class="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            完成制作
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- 个人资料页 -->
+        <div id="profile-page" class="page">
+            <header class="bg-white shadow-md p-4">
+                <h1 class="text-2xl font-bold text-gray-800 text-center">个人资料</h1>
+            </header>
+            <main class="p-4">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="user" class="w-12 h-12 text-green-500"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold">厨师之名</h2>
+                    <p class="text-gray-600">美食爱好者</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
+                        <span class="font-medium">我的菜谱</span>
+                        <span id="recipe-count" class="text-green-500 font-semibold">{{ recipes?.length || 0 }}</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
+                        <span class="font-medium">设置</span>
+                        <i data-lucide="chevron-right" class="text-gray-400"></i>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
+                        <span class="font-medium">关于我们</span>
+                        <i data-lucide="chevron-right" class="text-gray-400"></i>
+                    </div>
+                    <button id="export-data-btn" @click="exportData" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-6">
+                        导出数据 (CSV)
+                    </button>
+                    <input type="file" id="import-data-input" accept=".csv" class="hidden" @change="importData">
+                    <button id="import-data-btn" @click="triggerImport" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-4">
+                        导入数据 (CSV)
+                    </button>
+                    <button id="clear-data-btn" @click="showClearDataConfirm" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mt-4">
+                        清除所有数据
                     </button>
                 </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="hideAddRecipeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
-                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">保存</button>
+            </main>
+        </div>
+        
+        <!-- 添加菜谱模态框 -->
+        <div id="add-recipe-modal" class="modal" :class="{ active: showAddModal }">
+            <div class="modal-content">
+                <h2 class="text-xl font-bold mb-4">{{ editingRecipe ? '编辑菜谱' : '添加新菜谱' }}</h2>
+                <form @submit.prevent="saveRecipe">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="recipe-title" class="block text-sm font-medium text-gray-700 mb-1">菜谱名称</label>
+                            <input 
+                                type="text" 
+                                id="recipe-title" 
+                                v-model="recipeForm.title"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label for="recipe-description" class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                            <textarea 
+                                id="recipe-description" 
+                                v-model="recipeForm.description"
+                                rows="3" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                required
+                            ></textarea>
+                        </div>
+                        
+                        <!-- 食材部分 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">食材</label>
+                            <div id="ingredients-input-container" class="space-y-2">
+                                <div 
+                                    v-for="(ingredient, index) in (recipeForm?.ingredients || [])" 
+                                    :key="index"
+                                    class="ingredient-input flex space-x-2"
+                                >
+                                    <input 
+                                        type="text" 
+                                        v-model="ingredient.name"
+                                        placeholder="食材名称" 
+                                        class="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                        required
+                                    >
+                                    <input 
+                                        type="number" 
+                                        v-model.number="ingredient.amount"
+                                        placeholder="数量" 
+                                        class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                        required
+                                    >
+                                    <input 
+                                        type="text" 
+                                        v-model="ingredient.unit"
+                                        placeholder="单位" 
+                                        class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                        required
+                                    >
+                                    <button 
+                                        type="button" 
+                                        @click="removeIngredient(index)"
+                                        class="remove-ingredient bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200"
+                                    >
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="addIngredient"
+                                class="mt-2 text-green-500 hover:text-green-700 flex items-center"
+                            >
+                                <i data-lucide="plus" class="w-4 h-4 mr-1"></i> 添加食材
+                            </button>
+                        </div>
+                        
+                        <!-- 步骤部分 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">步骤</label>
+                            <div id="steps-input-container" class="space-y-2">
+                                <div 
+                                    v-for="(step, index) in (recipeForm?.steps || [])" 
+                                    :key="index"
+                                    class="step-input"
+                                >
+                                    <textarea 
+                                        v-model="step.description"
+                                        rows="2" 
+                                        placeholder="烹饪步骤..." 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                        required
+                                    ></textarea>
+                                    <div class="flex items-center justify-between mt-1">
+                                        <label class="text-sm text-gray-600 flex items-center">
+                                            <input 
+                                                type="checkbox" 
+                                                v-model="step.timerEnabled"
+                                                @change="toggleTimerInput(index)"
+                                                class="mr-2"
+                                            >
+                                            需要计时
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            v-model.number="step.timerMinutes"
+                                            placeholder="分钟" 
+                                            class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                            :disabled="!step.timerEnabled"
+                                        >
+                                        <button 
+                                            type="button" 
+                                            @click="removeStep(index)"
+                                            class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200"
+                                        >
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="addStep"
+                                class="mt-2 text-green-500 hover:text-green-700 flex items-center"
+                            >
+                                <i data-lucide="plus" class="w-4 h-4 mr-1"></i> 添加步骤
+                            </button>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" @click="hideAddRecipeModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">保存</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 调整食材模态框 -->
+        <div id="adjust-ingredients-modal" class="modal" :class="{ active: showAdjustModal }">
+            <div class="modal-content">
+                <h2 class="text-xl font-bold mb-4">调整食材用量</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="servings" class="block text-sm font-medium text-gray-700 mb-1">用餐人数</label>
+                        <input 
+                            type="number" 
+                            id="servings" 
+                            v-model.number="servings"
+                            min="1"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-sm font-semibold mb-2">调整后的用量</h3>
+                        <ul class="space-y-1 text-sm">
+                            <li v-for="ingredient in adjustedIngredients" :key="ingredient.name" class="flex justify-between">
+                                <span>{{ ingredient.name }}</span>
+                                <span class="font-medium">{{ ingredient.amount }} {{ ingredient.unit }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button @click="hideAdjustIngredientsModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
+                        <button @click="confirmAdjustIngredients" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">确定</button>
+                    </div>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
-
-    <!-- 定时器模态框 -->
-    <div id="timer-modal" class="modal">
-        <div class="modal-content flex flex-col items-center">
-            <h2 id="timer-step-title" class="text-xl font-bold mb-4">烹饪计时</h2>
-            <div class="timer-container">
-                <svg class="progress-ring" width="150" height="150">
-                    <circle class="progress-ring__circle" cx="75" cy="75" r="70"></circle>
-                </svg>
-                <div class="timer-display">
-                    <span id="timer-minutes">00</span>:<span id="timer-seconds">00</span>
+        
+        <!-- 删除确认模态框 -->
+        <div id="delete-confirm-modal" class="modal" :class="{ active: showDeleteModal }">
+            <div class="modal-content text-center">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-2">确认删除</h2>
+                <p id="delete-recipe-name" class="mb-2 text-gray-700 font-medium">{{ deleteRecipe.title }}</p>
+                <p class="mb-6 text-gray-600">确定要删除这个菜谱吗？此操作不可恢复。</p>
+                <div class="flex justify-center space-x-4">
+                    <button @click="hideDeleteConfirmModal" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
+                    <button @click="confirmDeleteRecipe" class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">确认删除</button>
                 </div>
             </div>
-            <div class="flex space-x-4 mt-6">
-                <button id="pause-timer-btn" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">暂停</button>
-                <button id="stop-timer-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">停止</button>
+        </div>
+        
+        <!-- 清除数据确认模态框 -->
+        <div id="clear-data-modal" class="modal" :class="{ active: showClearDataModal }">
+            <div class="modal-content text-center">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-2">确认清除所有数据</h2>
+                <p class="mb-6 text-gray-600">此操作将删除所有菜谱和烹饪记录，且不可恢复。确定要继续吗？</p>
+                <div class="flex justify-center space-x-4">
+                    <button @click="hideClearDataModal" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
+                    <button @click="confirmClearData" class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">确认清除</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- 定时器完成提示模态框 -->
-    <div id="timer-done-modal" class="modal">
-        <div class="modal-content text-center">
-            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="bell" class="w-10 h-10 text-green-500"></i>
-            </div>
-            <h2 class="text-xl font-bold mb-2">时间到！</h2>
-            <p id="timer-done-message" class="mb-4">该进行下一步了！</p>
-            <button onclick="hideTimerDoneModal()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">好的</button>
-        </div>
-    </div>
-
-    <!-- 删除确认模态框 -->
-    <div id="delete-confirm-modal" class="modal">
-        <div class="modal-content text-center">
-            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
-            </div>
-            <h2 class="text-xl font-bold mb-2">确认删除</h2>
-            <p id="delete-recipe-name" class="mb-2 text-gray-700 font-medium">红烧肉</p>
-            <p class="mb-6 text-gray-600">确定要删除这个菜谱吗？此操作不可恢复。</p>
-            <div class="flex justify-center space-x-4">
-                <button onclick="hideDeleteConfirmModal()" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">取消</button>
-                <button onclick="confirmDeleteRecipe()" class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">确认删除</button>
+        
+        <!-- 定时器完成提示模态框 -->
+        <div id="timer-done-modal" class="modal" :class="{ active: showTimerDoneModal }">
+            <div class="modal-content text-center">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="bell" class="w-10 h-10 text-green-500"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-2">时间到！</h2>
+                <p id="timer-done-message" class="mb-4">该进行下一步了！</p>
+                <button @click="hideTimerDoneModal" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">好的</button>
             </div>
         </div>
+        
+        <!-- Toast 提示 -->
+        <div id="toast" class="toast" :class="{ active: showToast }">
+            {{ toastMessage }}
+        </div>
+        
+        <!-- 底部导航栏 -->
+        <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-50">
+            <div class="nav-item" :class="{ active: currentPage === 'home-page' }" @click="navigateTo('home-page')">
+                <i data-lucide="home" class="w-6 h-6"></i>
+                <span class="text-xs mt-1">首页</span>
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'profile-page' }" @click="navigateTo('profile-page')">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-xs mt-1">我的</span>
+            </div>
+        </nav>
     </div>
-    
-    <!-- Toast 提示 -->
-    <div id="toast" class="toast"></div>
 
     <script>
-        function initSwipeGestures() {
-            const recipeCards = document.querySelectorAll('.recipe-card-container');
-            let currentlyExpandedCard = null;
-
-            // 全局点击事件处理函数
-            const handleGlobalClick = (e) => {
-                // 如果点击的不是当前展开的卡片及其子元素
-                if (currentlyExpandedCard && !currentlyExpandedCard.contains(e.target)) {
-                    const cardContent = currentlyExpandedCard.querySelector('.recipe-card-content');
-                    const cardActions = currentlyExpandedCard.querySelector('.recipe-card-actions');
-                    
-                    if (cardContent && cardContent.style.transform === 'translateX(-128px)') {
-                        cardContent.style.transform = 'translateX(0)';
-                        cardActions.style.transform = 'translateX(100%)';
-                        currentlyExpandedCard = null;
-                    }
-                }
-            };
-
-            // 添加全局点击事件监听器
-            document.addEventListener('click', handleGlobalClick);
-
-            recipeCards.forEach(card => {
-                const cardContent = card.querySelector('.recipe-card-content');
-                let startX = 0;
-                let currentX = 0;
-                let isDragging = false;
-
-                const handleTouchStart = (e) => {
-                    startX = e.touches[0].clientX;
-                    isDragging = true;
-                    cardContent.style.transition = 'none';
-                    
-                    // 如果有其他卡片处于展开状态，先将其关闭
-                    if (currentlyExpandedCard && currentlyExpandedCard !== card) {
-                        const otherCardContent = currentlyExpandedCard.querySelector('.recipe-card-content');
-                        const otherCardActions = currentlyExpandedCard.querySelector('.recipe-card-actions');
-                        otherCardContent.style.transform = 'translateX(0)';
-                        otherCardActions.style.transform = 'translateX(100%)';
-                    }
-                };
-
-                const handleTouchMove = (e) => {
-                    if (!isDragging) return;
-                    
-                    currentX = e.touches[0].clientX;
-                    const diffX = currentX - startX;
-                    
-                    // 只允许向左滑动，且最大滑动距离为128px
-                    if (diffX < 0 && diffX > -128) {
-                        cardContent.style.transform = `translateX(${diffX}px)`;
-                        // 同时移动操作按钮
-                        const actionsTranslateX = 100 + (diffX / 128 * 100);
-                        card.querySelector('.recipe-card-actions').style.transform = `translateX(${actionsTranslateX}%)`;
-                    }
-                };
-
-                const handleTouchEnd = () => {
-                    if (!isDragging) return;
-                    
-                    isDragging = false;
-                    cardContent.style.transition = 'transform 0.3s ease';
-                    card.querySelector('.recipe-card-actions').style.transition = 'transform 0.3s ease';
-                    
-                    const diffX = currentX - startX;
-                    
-                    // 如果滑动距离超过64px，则显示操作按钮
-                    if (diffX < -64) {
-                        cardContent.style.transform = 'translateX(-128px)';
-                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(0%)';
-                        currentlyExpandedCard = card;
-                    } else {
-                        cardContent.style.transform = 'translateX(0)';
-                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
-                        if (currentlyExpandedCard === card) {
-                            currentlyExpandedCard = null;
-                        }
-                    }
-                };
-
-                const handleCardClick = () => {
-                    if (cardContent.style.transform === 'translateX(-128px)') {
-                        cardContent.style.transform = 'translateX(0)';
-                        card.querySelector('.recipe-card-actions').style.transform = 'translateX(100%)';
-                        currentlyExpandedCard = null;
-                    }
-                };
-
-                // 添加事件监听器
-                card.addEventListener('touchstart', handleTouchStart);
-                card.addEventListener('touchmove', handleTouchMove);
-                card.addEventListener('touchend', handleTouchEnd);
-                cardContent.addEventListener('click', handleCardClick);
-
-                // 存储事件监听器引用，以便后续清理
-                card._gestureHandlers = {
-                    handleTouchStart,
-                    handleTouchMove,
-                    handleTouchEnd,
-                    handleCardClick
-                };
-            });
-        }
-
-        lucide.createIcons();
-
-        // 数据存储
-        let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
-        let currentRecipe = null;
-        let currentRecipeIndex = -1;
-        let currentServings = 1;
-        let originalServings = 1;
-        let timer = null;
-        let timerSeconds = 0;
-        let timerMinutes = 0;
-        let timerTotalSeconds = 0;
-        let timerIsRunning = false;
-        let currentStepIndex = 0;
-        let recipeToDeleteIndex = -1;
-
-        // 页面导航
-        function navigateTo(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            document.getElementById(pageId).classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            if (pageId === 'home-page' || pageId === 'profile-page') {
-                const navIndex = pageId === 'home-page' ? 0 : 1;
-                document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
-            }
-            
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-            updateRecipeCount();
-        }
-
-        // 显示菜谱列表
-        function displayRecipes() {
-            const recipeList = document.getElementById('recipe-list');
-            recipeList.innerHTML = '';
-            
-            if (recipes.length === 0) {
-                recipeList.innerHTML = `
-                    <div class="col-span-2 text-center py-8 text-gray-500">
-                        <i data-lucide="book" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
-                        <p>还没有添加任何菜谱</p>
-                        <p class="text-sm">点击右下角的加号按钮添加</p>
-                    </div>
-                `;
-                lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-                return;
-            }
-
-            recipes.forEach((recipe, index) => {
-                const recipeCard = document.createElement('div');
-                recipeCard.className = 'recipe-card-container relative overflow-hidden rounded-lg shadow-sm';
-                recipeCard.dataset.index = index;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 状态管理
+                const recipes = ref([]);
+                const searchTerm = ref('');
+                const currentPage = ref('home-page');
+                const currentRecipe = ref({});
+                const adjustedIngredients = ref([]);
+                const servings = ref(1);
+                const originalServings = ref(1);
                 
-                // 根据菜谱名称选择一个图标
-                let recipeIcon = 'utensils';
-                if (recipe.title.includes('肉')) recipeIcon = 'drumstick-bite';
-                else if (recipe.title.includes('鱼')) recipeIcon = 'fish';
-                else if (recipe.title.includes('蛋')) recipeIcon = 'egg';
-                else if (recipe.title.includes('汤')) recipeIcon = 'bowl-hot';
-                else if (recipe.title.includes('菜') || recipe.title.includes('蔬')) recipeIcon = 'carrot';
+                // 模态框状态
+                const showAddModal = ref(false);
+                const showAdjustModal = ref(false);
+                const showDeleteModal = ref(false);
+                const showClearDataModal = ref(false);
+                const showTimerDoneModal = ref(false);
+                const showToast = ref(false);
+                const toastMessage = ref('');
                 
-                recipeCard.innerHTML = `
-                    <div class="recipe-card-actions absolute top-0 right-0 h-full flex z-10 transition-transform duration-300">
-                        <button onclick="editRecipe(${index})" class="bg-white text-green-500 w-16 h-full flex items-center justify-center hover:bg-green-50 transition-colors">
-                            <i data-lucide="edit" class="w-5 h-5"></i>
-                        </button>
-                        <button onclick="showDeleteConfirmModal(${index})" class="bg-white text-red-500 w-16 h-full flex items-center justify-center hover:bg-red-50 transition-colors">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                    <div class="recipe-card-content bg-white rounded-lg shadow-sm overflow-hidden transform transition-transform duration-300">
-                        <div class="p-4">
-                            <div class="flex items-center mb-2">
-                                <i data-lucide="${recipeIcon}" class="w-6 h-6 text-green-500 mr-2"></i>
-                                <h3 class="text-lg font-semibold">${recipe.title}</h3>
-                            </div>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">${recipe.description}</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-500">${recipe.ingredients.length} 种食材 · ${recipe.steps.length} 个步骤</span>
-                                <span class="text-xs text-gray-400">左滑编辑</span>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                            <span class="text-xs text-gray-500">${new Date(recipe.createdAt).toLocaleDateString()}</span>
-                            <button onclick="viewRecipeDetail(${index})" class="text-green-500 hover:text-green-700 text-sm font-medium flex items-center">
-                                查看详情 <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                recipeList.appendChild(recipeCard);
-
-
-            });
-            
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-        }
-
-        // 查看菜谱详情
-        function viewRecipeDetail(index) {
-            currentRecipe = recipes[index];
-            document.getElementById('detail-recipe-title').textContent = currentRecipe.title;
-            
-            // 调试：显示当前菜谱的步骤数据
-            console.log('查看菜谱详情 - 当前菜谱:', currentRecipe.title);
-            console.log('步骤数据:', currentRecipe.steps);
-            currentRecipe.steps.forEach((step, i) => {
-                console.log(`步骤 ${i + 1}:`, step);
-            });
-            
-            const detailContent = document.getElementById('recipe-detail-content');
-            detailContent.innerHTML = `
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <h3 class="text-lg font-semibold mb-2">描述</h3>
-                    <p class="text-gray-600">${currentRecipe.description}</p>
-                </div>
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <h3 class="text-lg font-semibold mb-2">食材</h3>
-                    <ul class="list-disc list-inside space-y-1 text-gray-600">
-                        ${currentRecipe.ingredients.map(ing => `<li>${ing.name} - ${ing.amount} ${ing.unit}</li>`).join('')}
-                    </ul>
-                </div>
-                <div class="bg-white rounded-lg shadow-sm p-4">
-                    <h3 class="text-lg font-semibold mb-2">步骤</h3>
-                    <ol class="list-decimal list-inside space-y-3 text-gray-600">
-                        ${currentRecipe.steps.map((step, i) => `
-                            <li class="pb-2 border-b border-gray-100 last:border-0">
-                                <p>${step.description}</p>
-                                ${step.timerEnabled ? `<span class="text-sm text-green-500">⏱️ ${step.timerMinutes} 分钟</span>` : ''}
-                            </li>
-                        `).join('')}
-                    </ol>
-                </div>
-            `;
-            
-            document.getElementById('start-cooking-btn').onclick = () => {
-                startCooking(currentRecipe);
-            };
-            
-            // 添加完成制作按钮事件
-            // 确保完成制作按钮的整个区域都能响应点击
-            const finishBtn = document.getElementById('finish-cooking-btn');
-            // 移除之前可能存在的事件监听器，避免重复绑定
-            finishBtn.onclick = null;
-            // 使用onclick而不是addEventListener，避免重复绑定
-            finishBtn.onclick = function(e) {
-                e.stopPropagation();
-                recordCookingCompletion();
-                navigateTo('home-page');
-            };
-            
-            navigateTo('recipe-detail-page');
-        }
-
-        // 开始烹饪
-        function startCooking(recipe) {
-            currentRecipe = recipe;
-            originalServings = 1;
-            currentServings = 1;
-            document.getElementById('cooking-recipe-title').textContent = recipe.title;
-            document.getElementById('serving-count').textContent = currentServings;
-            
-            displayIngredients();
-            displaySteps();
-            
-            navigateTo('cooking-page');
-        }
-
-        // 显示食材列表
-        function displayIngredients() {
-            const ingredientsList = document.getElementById('ingredients-list');
-            ingredientsList.innerHTML = '';
-            
-            currentRecipe.ingredients.forEach((ing, index) => {
-                const adjustedAmount = (ing.amount * currentServings / originalServings).toFixed(1);
-                const ingredientItem = document.createElement('div');
-                ingredientItem.className = 'bg-white p-3 rounded-lg shadow-sm flex justify-between items-center';
-                ingredientItem.innerHTML = `
-                    <span>${ing.name}</span>
-                    <div class="flex items-center space-x-2">
-                        <input type="number" value="${adjustedAmount}" class="ingredient-amount w-20 px-2 py-1 border border-gray-300 rounded-md text-right" data-index="${index}">
-                        <span>${ing.unit}</span>
-                    </div>
-                `;
-                ingredientsList.appendChild(ingredientItem);
-            });
-
-            // 添加食材数量变化监听器
-            document.querySelectorAll('.ingredient-amount').forEach(input => {
-                input.addEventListener('change', function() {
-                    const index = parseInt(this.dataset.index);
-                    const newAmount = parseFloat(this.value);
-                    if (!isNaN(newAmount) && newAmount > 0) {
-                        const ratio = newAmount / currentRecipe.ingredients[index].amount;
-                        currentServings = originalServings * ratio;
-                        document.getElementById('serving-count').textContent = currentServings.toFixed(1);
-                        displayIngredients();
-                    }
+                // 编辑状态
+                const editingRecipe = ref(null);
+                const recipeForm = ref({
+                    title: '',
+                    description: '',
+                    ingredients: [{ name: '', amount: '', unit: '' }],
+                    steps: [{ description: '', timerEnabled: false, timerMinutes: 0 }]
                 });
-            });
-        }
-
-        // 显示步骤列表
-        function displaySteps() {
-            const stepsList = document.getElementById('steps-list');
-            stepsList.innerHTML = '';
-            
-            console.log('显示步骤列表 - 当前菜谱:', currentRecipe.title);
-            console.log('步骤数据:', currentRecipe.steps);
-            
-            currentRecipe.steps.forEach((step, index) => {
-                console.log(`步骤 ${index + 1}:`, step);
                 
-                const stepCard = document.createElement('div');
-                stepCard.className = `step-card bg-white p-4 rounded-lg shadow-sm ${index === 0 ? 'active' : ''}`;
-                stepCard.innerHTML = `
-                    <div class="flex items-start">
-                        <div class="bg-green-100 text-green-500 w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                            ${index + 1}
-                        </div>
-                        <div class="flex-grow">
-                            <p class="text-gray-700 mb-2">${step.description}</p>
-                            ${step.timerEnabled ? `
-                                <button onclick="startTimer(${index}, ${step.timerMinutes})" class="mt-2 bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded-md flex items-center">
-                                    <i data-lucide="clock" class="w-4 h-4 mr-1"></i> 计时 ${step.timerMinutes} 分钟
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-                stepsList.appendChild(stepCard);
-            });
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-        }
-
-        // 调整份数
-        document.getElementById('decrease-servings').addEventListener('click', () => {
-            if (currentServings > 1) {
-                currentServings--;
-                document.getElementById('serving-count').textContent = currentServings;
-                displayIngredients();
-            }
-        });
-
-        document.getElementById('increase-servings').addEventListener('click', () => {
-            currentServings++;
-            document.getElementById('serving-count').textContent = currentServings;
-            displayIngredients();
-        });
-
-        // 开始定时器
-        function startTimer(stepIndex, minutes) {
-            currentStepIndex = stepIndex;
-            timerMinutes = minutes;
-            timerSeconds = 0;
-            timerTotalSeconds = minutes * 60;
-            
-            document.getElementById('timer-step-title').textContent = `步骤 ${stepIndex + 1}：烹饪计时`;
-            updateTimerDisplay();
-            showTimerModal();
-            
-            timer = setInterval(() => {
-                if (timerSeconds === 0) {
-                    if (timerMinutes === 0) {
-                        clearInterval(timer);
-                        timerIsRunning = false;
-                        showTimerDoneModal(stepIndex);
-                        return;
+                // 删除确认状态
+                const deleteRecipe = ref({});
+                
+                // 烹饪状态
+                const isCooking = ref(false);
+                const currentStepIndex = ref(0);
+                const isTimerRunning = ref(false);
+                const timerMinutes = ref(0);
+                const timerSeconds = ref(0);
+                const timerInterval = ref(null);
+                
+                // 滑动手势状态
+                const touchStartX = ref(0);
+                const touchCurrentX = ref(0);
+                const currentlyExpandedCard = ref(null);
+                
+                // 烹饪统计
+                const cookingRecords = ref({});
+                
+                // 计算属性
+                const filteredRecipes = computed(() => {
+                    if (!searchTerm.value) return recipes.value;
+                    return recipes.value.filter(recipe => 
+                        recipe.title.toLowerCase().includes(searchTerm.value.toLowerCase())
+                    );
+                });
+                
+                const currentStep = computed(() => {
+                    if (!currentRecipe.value.steps) return {};
+                    return currentRecipe.value.steps[currentStepIndex.value] || {};
+                });
+                
+                const cookingStats = computed(() => {
+                    const today = new Date();
+                    const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                    return (cookingRecords.value && cookingRecords.value[yearMonth]) || { total: 0, recipes: {} };
+                });
+                
+                const topRecipes = computed(() => {
+                    const recipes = cookingStats.value.recipes;
+                    return Object.entries(recipes)
+                        .map(([name, count]) => ({ name, count }))
+                        .sort((a, b) => b.count - a.count)
+                        .slice(0, 3);
+                });
+                
+                // 方法
+                function loadRecipes() {
+                    const savedRecipes = JSON.parse(localStorage.getItem('recipes')) || [];
+                    recipes.value = savedRecipes;
+                }
+                
+                function saveRecipes() {
+                    localStorage.setItem('recipes', JSON.stringify(recipes.value));
+                }
+                
+                function loadCookingRecords() {
+                    const savedRecords = JSON.parse(localStorage.getItem('cookingRecords')) || {};
+                    cookingRecords.value = savedRecords;
+                }
+                
+                function saveCookingRecords() {
+                    localStorage.setItem('cookingRecords', JSON.stringify(cookingRecords.value));
+                }
+                
+                function generateId() {
+                    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                }
+                
+                function formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString('zh-CN');
+                }
+                
+                function getRecipeIcon(title) {
+                    if (title.includes('肉')) return 'drumstick-bite';
+                    if (title.includes('鱼')) return 'fish';
+                    if (title.includes('蛋')) return 'egg';
+                    if (title.includes('汤')) return 'bowl-hot';
+                    if (title.includes('菜') || title.includes('蔬')) return 'carrot';
+                    return 'utensils';
+                }
+                
+                function navigateTo(pageId) {
+                    currentPage.value = pageId;
+                    
+                    // 隐藏所有页面
+                    document.querySelectorAll('.page').forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    
+                    // 显示目标页面
+                    const targetPage = document.getElementById(pageId);
+                    if (targetPage) {
+                        targetPage.classList.add('active');
                     }
-                    timerMinutes--;
-                    timerSeconds = 59;
-                } else {
-                    timerSeconds--;
-                }
-                updateTimerDisplay();
-            }, 1000);
-            
-            timerIsRunning = true;
-            updateProgressRing();
-        }
-
-        // 更新定时器显示
-        function updateTimerDisplay() {
-            document.getElementById('timer-minutes').textContent = timerMinutes.toString().padStart(2, '0');
-            document.getElementById('timer-seconds').textContent = timerSeconds.toString().padStart(2, '0');
-            updateProgressRing();
-        }
-
-        // 更新进度环
-        function updateProgressRing() {
-            const circle = document.querySelector('.progress-ring__circle');
-            const radius = circle.r.baseVal.value;
-            const circumference = radius * 2 * Math.PI;
-            
-            circle.style.strokeDasharray = `${circumference} ${circumference}`;
-            
-            const elapsedSeconds = timerTotalSeconds - (timerMinutes * 60 + timerSeconds);
-            const percentage = elapsedSeconds / timerTotalSeconds;
-            const offset = circumference - (percentage * circumference);
-            
-            circle.style.strokeDashoffset = offset;
-        }
-
-        // 暂停/继续定时器
-        document.getElementById('pause-timer-btn').addEventListener('click', () => {
-            if (timerIsRunning) {
-                clearInterval(timer);
-                document.getElementById('pause-timer-btn').textContent = '继续';
-            } else {
-                timer = setInterval(() => {
-                    if (timerSeconds === 0) {
-                        if (timerMinutes === 0) {
-                            clearInterval(timer);
-                            timerIsRunning = false;
-                            showTimerDoneModal(currentStepIndex);
-                            return;
-                        }
-                        timerMinutes--;
-                        timerSeconds = 59;
-                    } else {
-                        timerSeconds--;
-                    }
-                    updateTimerDisplay();
-                }, 1000);
-                document.getElementById('pause-timer-btn').textContent = '暂停';
-            }
-            timerIsRunning = !timerIsRunning;
-        });
-
-        // 停止定时器
-        document.getElementById('stop-timer-btn').addEventListener('click', () => {
-            clearInterval(timer);
-            timerIsRunning = false;
-            hideTimerModal();
-        });
-
-        // 显示定时器模态框
-        function showTimerModal() {
-            document.getElementById('timer-modal').classList.add('active');
-        }
-
-        // 隐藏定时器模态框
-        function hideTimerModal() {
-            document.getElementById('timer-modal').classList.remove('active');
-        }
-
-        // 显示定时器完成提示模态框
-        // 播放提示音
-        // 记录烹饪完成
-        function recordCookingCompletion() {
-            try {
-                const today = new Date();
-                const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-                
-                console.log('=== 开始记录完成制作 ===');
-                console.log('当前时间:', today);
-                console.log('年月:', yearMonth);
-                console.log('currentRecipe:', currentRecipe);
-                
-                // 获取现有数据，累积计数
-                
-                // 获取现有数据
-                let cookingRecords = {};
-                const existingData = localStorage.getItem('cookingRecords');
-                if (existingData) {
-                    cookingRecords = JSON.parse(existingData);
-                    console.log('获取到的现有数据:', cookingRecords);
-                } else {
-                    console.log('没有现有数据，创建新的数据结构');
+                    
+                    // 重新渲染图标
+                    setTimeout(() => {
+                        lucide.createIcons();
+                    }, 100);
                 }
                 
-                // 确保当前月份的数据结构完整
-                if (!cookingRecords[yearMonth]) {
-                    console.log('当前月份数据不存在，创建新的月份数据');
-                    cookingRecords[yearMonth] = { total: 0, recipes: {} };
-                }
-                
-                // 确保recipes是一个对象
-                if (!cookingRecords[yearMonth].recipes) {
-                    console.log('recipes对象不存在，创建新的recipes对象');
-                    cookingRecords[yearMonth].recipes = {};
-                }
-                
-                // 确保total是数字
-                if (typeof cookingRecords[yearMonth].total !== 'number') {
-                    console.log('total不是数字，重置为0');
-                    cookingRecords[yearMonth].total = 0;
-                }
-                
-                console.log('处理前的数据:', cookingRecords);
-                
-                // 更新总次数
-                cookingRecords[yearMonth].total += 1;
-                
-                // 更新菜品次数（如果有当前菜谱）
-                if (currentRecipe && typeof currentRecipe === 'object' && currentRecipe.title) {
-                    const recipeTitle = String(currentRecipe.title); // 确保是字符串
-                    // 如果菜品记录不存在，初始化为0
-                    if (!cookingRecords[yearMonth].recipes[recipeTitle]) {
-                        cookingRecords[yearMonth].recipes[recipeTitle] = 0;
-                    }
-                    // 增加菜品计数
-                    cookingRecords[yearMonth].recipes[recipeTitle] += 1;
-                    console.log(`已记录 ${recipeTitle} 的制作次数: ${cookingRecords[yearMonth].recipes[recipeTitle]}`);
-                } else {
-                    console.log('没有有效的currentRecipe，跳过菜品记录');
-                }
-                
-                console.log('更新后的数据:', cookingRecords);
-                
-                // 保存数据
-                localStorage.setItem('cookingRecords', JSON.stringify(cookingRecords));
-                console.log('数据保存成功');
-                
-                // 更新显示
-                updateCookingStats();
-                renderTopRecipesChart();
-                
-                // 显示成功提示
-                showToast('恭喜你完成了一道菜！');
-                console.log('=== 记录完成制作结束 ===');
-            } catch (error) {
-                console.error('记录烹饪完成时出错:', error);
-                // 即使出错也要显示成功提示，保证用户体验
-                showToast('恭喜你完成了一道菜！');
-            }
-        }
-
-        // 更新烹饪统计显示
-        function updateCookingStats() {
-            const today = new Date();
-            const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-            
-            let cookingRecords = JSON.parse(localStorage.getItem('cookingRecords')) || {};
-            const count = cookingRecords[yearMonth] && cookingRecords[yearMonth].total ? cookingRecords[yearMonth].total : 0;
-            
-            const countElement = document.getElementById('cooking-count');
-            if (countElement) {
-                countElement.textContent = count;
-            }
-        }
-
-        // 渲染菜品排行榜图表
-        function renderTopRecipesChart() {
-            const today = new Date();
-            const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-            
-            let cookingRecords = JSON.parse(localStorage.getItem('cookingRecords')) || {};
-            let recipeStats = cookingRecords[yearMonth] && cookingRecords[yearMonth].recipes ? cookingRecords[yearMonth].recipes : {};
-            
-            // 转换为数组并排序
-            let sortedRecipes = Object.entries(recipeStats)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 3); // 取前三
-            
-            const chartContainer = document.getElementById('top-recipes-chart');
-            if (!chartContainer) return;
-            
-            // 如果没有数据，显示提示信息
-            if (sortedRecipes.length === 0) {
-                chartContainer.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <i data-lucide="chart-bar" class="w-12 h-12 mx-auto mb-4 opacity-50"></i>
-                        <p>本月还没有烹饪记录</p>
-                        <p class="text-sm">完成制作后，这里会显示您的烹饪排行榜</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-            
-            // 生成图表HTML
-            let chartHTML = `
-                <div class="space-y-4 py-4">
-            `;
-            
-            sortedRecipes.forEach((recipe, index) => {
-                // 计算条形图宽度，最大100%
-                const maxCount = sortedRecipes[0].count;
-                const barWidth = Math.max(30, (recipe.count / maxCount) * 100);
-                
-                // 根据排名设置颜色
-                let barColor = 'bg-green-500';
-                if (index === 0) barColor = 'bg-yellow-400'; // 第一名为金色
-                else if (index === 1) barColor = 'bg-gray-300'; // 第二名为银色
-                else if (index === 2) barColor = 'bg-amber-700'; // 第三名为铜色
-                
-                // 根据排名设置图标
-                let rankIcon = '';
-                if (index === 0) rankIcon = '👑';
-                else if (index === 1) rankIcon = '🥈';
-                else if (index === 2) rankIcon = '🥉';
-                
-                chartHTML += `
-                    <div class="group">
-                        <div class="flex justify-between items-center mb-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-lg">${rankIcon}</span>
-                                <span class="text-sm font-medium text-gray-700 truncate max-w-[120px] group-hover:text-green-600 transition-colors">${recipe.name}</span>
-                            </div>
-                            <span class="text-sm font-bold ${index === 0 ? 'text-yellow-500' : 'text-gray-600'}">${recipe.count} 次</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                            <div class="${barColor} h-2.5 rounded-full transition-all duration-800 ease-out" style="width: 0%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            chartHTML += `</div>`;
-            chartContainer.innerHTML = chartHTML;
-            
-            // 添加动画效果
-            setTimeout(() => {
-                const bars = chartContainer.querySelectorAll('.bg-yellow-400, .bg-gray-300, .bg-amber-700');
-                bars.forEach((bar, index) => {
-                    const maxCount = sortedRecipes[0].count;
-                    const recipeCount = sortedRecipes[index].count;
-                    const barWidth = Math.max(30, (recipeCount / maxCount) * 100);
+                function showAddRecipeModal() {
+                    editingRecipe.value = null;
+                    recipeForm.value = {
+                        title: '',
+                        description: '',
+                        ingredients: [{ name: '', amount: '', unit: '' }],
+                        steps: [{ description: '', timerEnabled: false, timerMinutes: 0 }]
+                    };
+                    showAddModal.value = true;
                     
                     setTimeout(() => {
-                        bar.style.width = `${barWidth}%`;
-                    }, index * 200);
-                });
-            }, 100);
-        }
-
-        // 显示提示消息
-        function showToast(message) {
-            // 创建提示元素
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out';
-            toast.textContent = message;
-            
-            // 添加动画样式
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fade-in-out {
-                    0% { opacity: 0; transform: translate(-50%, 20px); }
-                    10% { opacity: 1; transform: translate(-50%, 0); }
-                    90% { opacity: 1; transform: translate(-50%, 0); }
-                    100% { opacity: 0; transform: translate(-50%, -20px); }
+                        lucide.createIcons();
+                    }, 100);
                 }
-                .animate-fade-in-out {
-                    animation: fade-in-out 3s ease-in-out forwards;
+                
+                function hideAddRecipeModal() {
+                    showAddModal.value = false;
                 }
-            `;
-            document.head.appendChild(style);
-            
-            document.body.appendChild(toast);
-            
-            // 3秒后移除
-            setTimeout(() => {
-                toast.remove();
-                style.remove();
-            }, 3000);
-        }
-
-        function playNotificationSound() {
-            try {
-                // 创建音频上下文
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // 创建振荡器
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+                function editRecipe(recipe) {
+                    editingRecipe.value = recipe;
+                    recipeForm.value = {
+                        title: recipe.title,
+                        description: recipe.description,
+                        ingredients: JSON.parse(JSON.stringify(recipe.ingredients)),
+                        steps: JSON.parse(JSON.stringify(recipe.steps))
+                    };
+                    showAddModal.value = true;
+                    
+                    setTimeout(() => {
+                        lucide.createIcons();
+                    }, 100);
+                }
                 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // 设置音频参数
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 高音调
-                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1); // 低音调
-                
-                // 设置音量包络
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                // 播放声音
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-                
-                // 重复播放3次，模拟完成提示音
-                setTimeout(() => {
-                    const oscillator2 = audioContext.createOscillator();
-                    const gainNode2 = audioContext.createGain();
+                function saveRecipe() {
+                    const recipeData = {
+                        title: recipeForm.value.title,
+                        description: recipeForm.value.description,
+                        ingredients: recipeForm.value.ingredients,
+                        steps: recipeForm.value.steps
+                    };
                     
-                    oscillator2.connect(gainNode2);
-                    gainNode2.connect(audioContext.destination);
-                    
-                    oscillator2.type = 'sine';
-                    oscillator2.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator2.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                    
-                    gainNode2.gain.setValueAtTime(0, audioContext.currentTime);
-                    gainNode2.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator2.start(audioContext.currentTime);
-                    oscillator2.stop(audioContext.currentTime + 0.5);
-                }, 600);
-                
-                setTimeout(() => {
-                    const oscillator3 = audioContext.createOscillator();
-                    const gainNode3 = audioContext.createGain();
-                    
-                    oscillator3.connect(gainNode3);
-                    gainNode3.connect(audioContext.destination);
-                    
-                    oscillator3.type = 'sine';
-                    oscillator3.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator3.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                    
-                    gainNode3.gain.setValueAtTime(0, audioContext.currentTime);
-                    gainNode3.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-                    gainNode3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator3.start(audioContext.currentTime);
-                    oscillator3.stop(audioContext.currentTime + 0.5);
-                }, 1200);
-            } catch (e) {
-                console.log('Audio generation failed:', e);
-            }
-        }
-
-        function showTimerDoneModal(stepIndex) {
-            document.getElementById('timer-done-message').textContent = `步骤 ${stepIndex + 1} 完成！该进行下一步了。`;
-            document.getElementById('timer-done-modal').classList.add('active');
-            
-            // 播放提示音
-            playNotificationSound();
-        }
-
-        // 隐藏定时器完成提示模态框
-        function hideTimerDoneModal() {
-            document.getElementById('timer-done-modal').classList.remove('active');
-            hideTimerModal();
-            
-            // 自动滚动到下一步
-            const stepCards = document.querySelectorAll('.step-card');
-            if (currentStepIndex < stepCards.length - 1) {
-                stepCards[currentStepIndex].classList.remove('active');
-                stepCards[currentStepIndex + 1].classList.add('active');
-                stepCards[currentStepIndex + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-
-        // 显示删除确认模态框
-        function showDeleteConfirmModal(index) {
-            const recipe = recipes[index];
-            if (recipe) {
-                document.getElementById('delete-recipe-name').textContent = recipe.title;
-                recipeToDeleteIndex = index;
-                document.getElementById('delete-confirm-modal').classList.add('active');
-                lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-            }
-        }
-
-        // 隐藏删除确认模态框
-        function hideDeleteConfirmModal() {
-            document.getElementById('delete-confirm-modal').classList.remove('active');
-            recipeToDeleteIndex = -1;
-        }
-
-        // 确认删除菜谱
-        function confirmDeleteRecipe() {
-            if (recipeToDeleteIndex >= 0 && recipeToDeleteIndex < recipes.length) {
-                recipes.splice(recipeToDeleteIndex, 1);
-                localStorage.setItem('recipes', JSON.stringify(recipes));
-                displayRecipes();
-                showToast('菜谱已删除');
-                updateRecipeCount();
-                hideDeleteConfirmModal();
-            }
-        }
-
-        // 显示添加菜谱模态框
-        function showAddRecipeModal() {
-            document.getElementById('add-recipe-modal').classList.add('active');
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-        }
-
-        // 隐藏添加菜谱模态框
-        function hideAddRecipeModal() {
-            document.getElementById('add-recipe-modal').classList.remove('active');
-            document.getElementById('add-recipe-form').reset();
-            currentRecipeIndex = -1;
-            // 清除编辑索引
-            document.getElementById('add-recipe-form').dataset.editIndex = -1;
-            console.log('隐藏添加菜谱模态框，清除编辑索引');
-            
-            // 重置食材和步骤输入框
-            const ingredientsContainer = document.getElementById('ingredients-input-container');
-            ingredientsContainer.innerHTML = `
-                <div class="ingredient-input flex space-x-2">
-                    <input type="text" name="ingredient-name[]" placeholder="食材名称" class="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                    <input type="number" name="ingredient-amount[]" placeholder="数量" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                    <input type="text" name="ingredient-unit[]" placeholder="单位" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                    <button type="button" class="remove-ingredient bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            `;
-            
-            const stepsContainer = document.getElementById('steps-input-container');
-            stepsContainer.innerHTML = `
-                <div class="step-input">
-                    <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
-                    <div class="flex items-center justify-between mt-1">
-                        <label class="text-sm text-gray-600 flex items-center">
-                            <input type="checkbox" name="step-timer-enabled[]" class="mr-2">
-                            需要计时
-                        </label>
-                        <input type="number" name="step-timer-minutes[]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
-                        <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            addEventListenersToForm();
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-        }
-
-        // 添加食材输入框
-        document.getElementById('add-ingredient-btn').addEventListener('click', () => {
-            const container = document.getElementById('ingredients-input-container');
-            const newInput = document.createElement('div');
-            newInput.className = 'ingredient-input flex space-x-2';
-            newInput.innerHTML = `
-                <input type="text" name="ingredient-name[]" placeholder="食材名称" class="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                <input type="number" name="ingredient-amount[]" placeholder="数量" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                <input type="text" name="ingredient-unit[]" placeholder="单位" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                <button type="button" class="remove-ingredient bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-            `;
-            container.appendChild(newInput);
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-            
-            // 添加删除按钮事件监听
-            newInput.querySelector('.remove-ingredient').addEventListener('click', () => {
-                newInput.remove();
-            });
-        });
-
-        // 添加步骤输入框
-        document.getElementById('add-step-btn').addEventListener('click', () => {
-            const container = document.getElementById('steps-input-container');
-            const stepIndex = container.children.length; // 获取当前步骤索引
-            const newInput = document.createElement('div');
-            newInput.className = 'step-input';
-            newInput.innerHTML = `
-                <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
-                <div class="flex items-center justify-between mt-1">
-                    <label class="text-sm text-gray-600 flex items-center">
-                        <input type="checkbox" name="step-timer-enabled[${stepIndex}]" class="mr-2">
-                        需要计时
-                    </label>
-                    <input type="number" name="step-timer-minutes[${stepIndex}]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
-                    <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(newInput);
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-            
-            // 添加删除按钮和计时复选框事件监听
-            newInput.querySelector('.remove-step').addEventListener('click', () => {
-                newInput.remove();
-            });
-            
-            // 查找计时复选框和分钟输入框（使用属性选择器）
-            const timerCheckbox = newInput.querySelector('input[name^="step-timer-enabled"]');
-            const timerInput = newInput.querySelector('input[name^="step-timer-minutes"]');
-            
-            if (timerCheckbox && timerInput) {
-                timerCheckbox.addEventListener('change', () => {
-                    timerInput.disabled = !timerCheckbox.checked;
-                });
-            }
-        });
-
-        // 为表单元素添加事件监听器
-        function addEventListenersToForm() {
-            // 删除食材
-            document.querySelectorAll('.remove-ingredient').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (document.querySelectorAll('.ingredient-input').length > 1) {
-                        this.closest('.ingredient-input').remove();
+                    if (editingRecipe.value) {
+                        // 编辑现有菜谱
+                        const index = recipes.value.findIndex(r => r.id === editingRecipe.value.id);
+                        if (index !== -1) {
+                            recipes.value[index] = { ...recipes.value[index], ...recipeData };
+                            showToastMessage('菜谱更新成功！');
+                        }
                     } else {
-                        showToast('至少需要一种食材');
+                        // 添加新菜谱
+                        const newRecipe = {
+                            ...recipeData,
+                            id: generateId(),
+                            createdAt: new Date().toISOString()
+                        };
+                        recipes.value.push(newRecipe);
+                        showToastMessage('菜谱添加成功！');
                     }
-                });
-            });
-            
-            // 删除步骤
-            document.querySelectorAll('.remove-step').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (document.querySelectorAll('.step-input').length > 1) {
-                        this.closest('.step-input').remove();
+                    
+                    saveRecipes();
+                    hideAddRecipeModal();
+                }
+                
+                function showDeleteConfirmModal(recipe) {
+                    deleteRecipe.value = recipe;
+                    showDeleteModal.value = true;
+                    
+                    setTimeout(() => {
+                        lucide.createIcons();
+                    }, 100);
+                }
+                
+                function hideDeleteConfirmModal() {
+                    showDeleteModal.value = false;
+                }
+                
+                function confirmDeleteRecipe() {
+                    const index = recipes.value.findIndex(r => r.id === deleteRecipe.value.id);
+                    if (index !== -1) {
+                        recipes.value.splice(index, 1);
+                        saveRecipes();
+                        showToastMessage('菜谱删除成功！');
+                    }
+                    hideDeleteConfirmModal();
+                }
+                
+                function viewRecipeDetail(recipe) {
+                    currentRecipe.value = recipe;
+                    adjustedIngredients.value = JSON.parse(JSON.stringify(recipe.ingredients));
+                    originalServings.value = 1;
+                    servings.value = 1;
+                    navigateTo('recipe-detail-page');
+                }
+                
+                function showAdjustIngredientsModal() {
+                    showAdjustModal.value = true;
+                }
+                
+                function hideAdjustIngredientsModal() {
+                    showAdjustModal.value = false;
+                }
+                
+                function confirmAdjustIngredients() {
+                    const ratio = servings.value / originalServings.value;
+                    adjustedIngredients.value = currentRecipe.value.ingredients.map(ingredient => ({
+                        ...ingredient,
+                        amount: (ingredient.amount * ratio).toFixed(1)
+                    }));
+                    originalServings.value = servings.value;
+                    hideAdjustIngredientsModal();
+                }
+                
+                function startCooking() {
+                    isCooking.value = true;
+                    currentStepIndex.value = 0;
+                    navigateTo('cooking-page');
+                }
+                
+                function stopCooking() {
+                    isCooking.value = false;
+                    stopTimer();
+                    navigateTo('recipe-detail-page');
+                }
+                
+                function nextStep() {
+                    if (currentStepIndex.value < currentRecipe.value.steps.length - 1) {
+                        currentStepIndex.value++;
+                        startStepTimer();
+                    }
+                }
+                
+                function previousStep() {
+                    if (currentStepIndex.value > 0) {
+                        currentStepIndex.value--;
+                        startStepTimer();
+                    }
+                }
+                
+                function goToStep(index) {
+                    if (index >= 0 && index < currentRecipe.value.steps.length) {
+                        currentStepIndex.value = index;
+                        startStepTimer();
+                    }
+                }
+                
+                function startStepTimer() {
+                    stopTimer();
+                    if (currentStep.value.timerEnabled) {
+                        timerMinutes.value = currentStep.value.timerMinutes;
+                        timerSeconds.value = 0;
+                        updateTimerDisplay();
+                    }
+                }
+                
+                function toggleTimer() {
+                    if (isTimerRunning.value) {
+                        pauseTimer();
                     } else {
-                        showToast('至少需要一个步骤');
+                        startTimer();
                     }
-                });
-            });
-            
-            // 计时复选框
-            document.querySelectorAll('input[name="step-timer-enabled[]"]').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const timerInput = this.closest('.step-input').querySelector('input[name="step-timer-minutes[]"]');
-                    timerInput.disabled = !this.checked;
-                });
-            });
-        }
-
-        // 添加菜谱表单提交
-        document.getElementById('add-recipe-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const title = formData.get('title');
-            const description = formData.get('description');
-            
-            const ingredientNames = formData.getAll('ingredient-name[]');
-            const ingredientAmounts = formData.getAll('ingredient-amount[]');
-            const ingredientUnits = formData.getAll('ingredient-unit[]');
-            
-            // 获取所有步骤描述
-            const stepDescriptions = formData.getAll('step-description[]');
-            console.log('步骤描述数量:', stepDescriptions.length);
-            
-            // 处理计时设置
-            const stepTimerEnabled = [];
-            const stepTimerMinutes = [];
-            
-            // 遍历所有步骤
-            for (let i = 0; i < stepDescriptions.length; i++) {
-                // 检查该步骤是否启用了计时（复选框是否选中）
-                const timerEnabled = formData.has(`step-timer-enabled[${i}]`);
-                // 获取计时分钟数
-                const minutesInput = formData.get(`step-timer-minutes[${i}]`);
-                const minutes = timerEnabled && minutesInput ? parseInt(minutesInput) || 0 : 0;
+                }
                 
-                stepTimerEnabled.push(timerEnabled);
-                stepTimerMinutes.push(minutes);
+                function startTimer() {
+                    if (timerInterval.value) return;
+                    
+                    isTimerRunning.value = true;
+                    timerInterval.value = setInterval(() => {
+                        if (timerSeconds.value > 0) {
+                            timerSeconds.value--;
+                        } else if (timerMinutes.value > 0) {
+                            timerMinutes.value--;
+                            timerSeconds.value = 59;
+                        } else {
+                            timerComplete();
+                            return;
+                        }
+                        updateTimerDisplay();
+                    }, 1000);
+                }
                 
-                console.log(`步骤 ${i + 1} 计时设置:`, {
-                    enabled: timerEnabled,
-                    minutes: minutes,
-                    hasTimerCheckbox: formData.has(`step-timer-enabled[${i}]`),
-                    minutesInput: minutesInput
+                function pauseTimer() {
+                    if (timerInterval.value) {
+                        clearInterval(timerInterval.value);
+                        timerInterval.value = null;
+                        isTimerRunning.value = false;
+                    }
+                }
+                
+                function stopTimer() {
+                    pauseTimer();
+                    timerMinutes.value = 0;
+                    timerSeconds.value = 0;
+                    updateTimerDisplay();
+                }
+                
+                function timerComplete() {
+                    stopTimer();
+                    showTimerDoneModal.value = true;
+                    
+                    // 播放提示音
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+                    audio.play().catch(e => console.log('无法播放音频:', e));
+                }
+                
+                function hideTimerDoneModal() {
+                    showTimerDoneModal.value = false;
+                }
+                
+                function finishCooking() {
+                    isCooking.value = false;
+                    stopTimer();
+                    
+                    // 记录烹饪完成
+                    recordCooking(currentRecipe.value.title);
+                    
+                    showToastMessage('恭喜你完成了一道菜！');
+                    navigateTo('home-page');
+                }
+                
+                function recordCooking(recipeTitle) {
+                    const today = new Date();
+                    const yearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                    
+                    if (!cookingRecords.value[yearMonth]) {
+                        cookingRecords.value[yearMonth] = { total: 0, recipes: {} };
+                    }
+                    
+                    cookingRecords.value[yearMonth].total += 1;
+                    
+                    if (!cookingRecords.value[yearMonth].recipes[recipeTitle]) {
+                        cookingRecords.value[yearMonth].recipes[recipeTitle] = 0;
+                    }
+                    cookingRecords.value[yearMonth].recipes[recipeTitle] += 1;
+                    
+                    saveCookingRecords();
+                }
+                
+                function updateTimerDisplay() {
+                    const circle = document.querySelector('.progress-ring__circle');
+                    if (!circle) return;
+                    
+                    const totalSeconds = currentStep.value.timerMinutes * 60;
+                    const remainingSeconds = timerMinutes.value * 60 + timerSeconds.value;
+                    const progress = (totalSeconds - remainingSeconds) / totalSeconds;
+                    
+                    const circumference = 2 * Math.PI * 44;
+                    const offset = circumference - progress * circumference;
+                    circle.style.strokeDashoffset = offset;
+                }
+                
+                function formatTime(time) {
+                    return time.toString().padStart(2, '0');
+                }
+                
+                function handleSearch() {
+                    // 搜索逻辑已在 computed 中处理
+                }
+                
+                function showToastMessage(message) {
+                    toastMessage.value = message;
+                    showToast.value = true;
+                    setTimeout(() => {
+                        showToast.value = false;
+                    }, 3000);
+                }
+                
+                function exportData() {
+                    if (recipes.value.length === 0) {
+                        showToastMessage('没有数据可以导出');
+                        return;
+                    }
+                    
+                    let csvContent = "菜谱名称,描述,食材数量,步骤数量,创建时间\n";
+                    
+                    recipes.value.forEach(recipe => {
+                        const row = [
+                            `"${recipe.title}"`,
+                            `"${recipe.description.replace(/"/g, '""')}"`,
+                            recipe.ingredients.length,
+                            recipe.steps.length,
+                            new Date(recipe.createdAt).toLocaleDateString('zh-CN')
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    });
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `菜谱数据_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showToastMessage('数据导出成功！');
+                }
+                
+                function triggerImport() {
+                    document.getElementById('import-data-input').click();
+                }
+                
+                function importData(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const text = e.target.result;
+                            const lines = text.split('\n').slice(1); // 跳过标题行
+                            
+                            const importedRecipes = [];
+                            lines.forEach(line => {
+                                if (!line.trim()) return;
+                                
+                                const columns = [];
+                                let current = '';
+                                let inQuotes = false;
+                                
+                                for (let i = 0; i < line.length; i++) {
+                                    const char = line[i];
+                                    if (char === '"') {
+                                        inQuotes = !inQuotes;
+                                    } else if (char === ',' && !inQuotes) {
+                                        columns.push(current);
+                                        current = '';
+                                    } else {
+                                        current += char;
+                                    }
+                                }
+                                columns.push(current);
+                                
+                                if (columns.length >= 5) {
+                                    const recipe = {
+                                        id: generateId(),
+                                        title: columns[0],
+                                        description: columns[1],
+                                        ingredients: [],
+                                        steps: [],
+                                        createdAt: new Date().toISOString()
+                                    };
+                                    importedRecipes.push(recipe);
+                                }
+                            });
+                            
+                            if (importedRecipes.length > 0) {
+                                recipes.value.push(...importedRecipes);
+                                saveRecipes();
+                                showToastMessage(`成功导入 ${importedRecipes.length} 个菜谱！`);
+                            } else {
+                                showToastMessage('未找到有效的菜谱数据');
+                            }
+                        } catch (error) {
+                            console.error('导入失败:', error);
+                            showToastMessage('导入失败，请检查文件格式');
+                        }
+                    };
+                    
+                    reader.readAsText(file, 'UTF-8');
+                    event.target.value = ''; // 重置文件输入
+                }
+                
+                function showClearDataConfirm() {
+                    showClearDataModal.value = true;
+                    
+                    setTimeout(() => {
+                        lucide.createIcons();
+                    }, 100);
+                }
+                
+                function hideClearDataModal() {
+                    showClearDataModal.value = false;
+                }
+                
+                function confirmClearData() {
+                    if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                        recipes.value = [];
+                        cookingRecords.value = {};
+                        saveRecipes();
+                        saveCookingRecords();
+                        showToastMessage('所有数据已清除');
+                    }
+                    hideClearDataModal();
+                }
+                
+                // 滑动手势处理
+                function handleTouchStart(event, index) {
+                    touchStartX.value = event.touches[0].clientX;
+                    touchCurrentX.value = touchStartX.value;
+                }
+                
+                function handleTouchMove(event, index) {
+                    touchCurrentX.value = event.touches[0].clientX;
+                    const diffX = touchCurrentX.value - touchStartX.value;
+                    
+                    if (diffX < 0 && diffX > -128) {
+                        const card = event.currentTarget;
+                        const cardContent = card;
+                        const cardActions = card.parentElement.querySelector('.recipe-card-actions');
+                        
+                        if (cardContent && cardActions) {
+                            cardContent.style.transform = `translateX(${diffX}px)`;
+                            const actionsTranslateX = 100 + (diffX / 128 * 100);
+                            cardActions.style.transform = `translateX(${actionsTranslateX}%)`;
+                        }
+                    }
+                }
+                
+                function handleTouchEnd(event, index) {
+                    const diffX = touchCurrentX.value - touchStartX.value;
+                    const card = event.currentTarget;
+                    const cardContent = card;
+                    const cardActions = card.parentElement.querySelector('.recipe-card-actions');
+                    
+                    if (cardContent && cardActions) {
+                        cardContent.style.transition = 'transform 0.3s ease';
+                        cardActions.style.transition = 'transform 0.3s ease';
+                        
+                        if (diffX < -64) {
+                            cardContent.style.transform = 'translateX(-128px)';
+                            cardActions.style.transform = 'translateX(0%)';
+                            currentlyExpandedCard.value = card;
+                        } else {
+                            cardContent.style.transform = 'translateX(0)';
+                            cardActions.style.transform = 'translateX(100%)';
+                            if (currentlyExpandedCard.value === card) {
+                                currentlyExpandedCard.value = null;
+                            }
+                        }
+                    }
+                }
+                
+                // 排行榜相关方法
+                function getRankIcon(index) {
+                    if (index === 0) return '👑';
+                    if (index === 1) return '🥈';
+                    if (index === 2) return '🥉';
+                    return `${index + 1}`;
+                }
+                
+                function getBarColor(index) {
+                    if (index === 0) return 'bg-yellow-400';
+                    if (index === 1) return 'bg-gray-300';
+                    if (index === 2) return 'bg-amber-700';
+                    return 'bg-green-500';
+                }
+                
+                function getBarWidth(count) {
+                    if (topRecipes.value.length === 0) return 0;
+                    const maxCount = topRecipes.value[0].count;
+                    return Math.max(30, (count / maxCount) * 100);
+                }
+                
+                // 表单操作方法
+                function addIngredient() {
+                    recipeForm.value.ingredients.push({ name: '', amount: '', unit: '' });
+                }
+                
+                function removeIngredient(index) {
+                    if (recipeForm.value.ingredients.length > 1) {
+                        recipeForm.value.ingredients.splice(index, 1);
+                    }
+                }
+                
+                function addStep() {
+                    recipeForm.value.steps.push({ description: '', timerEnabled: false, timerMinutes: 0 });
+                }
+                
+                function removeStep(index) {
+                    if (recipeForm.value.steps.length > 1) {
+                        recipeForm.value.steps.splice(index, 1);
+                    }
+                }
+                
+                function toggleTimerInput(index) {
+                    if (!recipeForm.value.steps[index].timerEnabled) {
+                        recipeForm.value.steps[index].timerMinutes = 0;
+                    }
+                }
+                
+                // 生命周期
+                onMounted(() => {
+                    loadRecipes();
+                    loadCookingRecords();
+                    
+                    // 添加全局点击事件处理
+                    document.addEventListener('click', (e) => {
+                        if (currentlyExpandedCard.value && !currentlyExpandedCard.value.contains(e.target)) {
+                            const cardContent = currentlyExpandedCard.value;
+                            const cardActions = cardContent.parentElement.querySelector('.recipe-card-actions');
+                            
+                            if (cardContent && cardActions) {
+                                cardContent.style.transform = 'translateX(0)';
+                                cardActions.style.transform = 'translateX(100%)';
+                                currentlyExpandedCard.value = null;
+                            }
+                        }
+                    });
+                    
+                    // 初始化示例数据
+                    if (recipes.value.length === 0) {
+                        const sampleRecipes = [
+                            {
+                                id: '1',
+                                title: '番茄炒蛋',
+                                description: '一道经典的家常菜，酸甜可口，营养丰富。',
+                                ingredients: [
+                                    { name: '鸡蛋', amount: 3, unit: '个' },
+                                    { name: '番茄', amount: 2, unit: '个' },
+                                    { name: '葱', amount: 1, unit: '根' },
+                                    { name: '盐', amount: 1, unit: '小勺' },
+                                    { name: '糖', amount: 1, unit: '小勺' }
+                                ],
+                                steps: [
+                                    { description: '将鸡蛋打散，加入少许盐搅拌均匀。', timerEnabled: false, timerMinutes: 0 },
+                                    { description: '番茄洗净切块，葱切末。', timerEnabled: false, timerMinutes: 0 },
+                                    { description: '热锅倒油，倒入蛋液炒熟盛出。', timerEnabled: true, timerMinutes: 2 },
+                                    { description: '锅中加油，放入番茄翻炒出汁。', timerEnabled: true, timerMinutes: 3 },
+                                    { description: '加入炒好的鸡蛋，撒上葱花，翻炒均匀即可。', timerEnabled: false, timerMinutes: 0 }
+                                ],
+                                createdAt: new Date().toISOString()
+                            },
+                            {
+                                id: '2',
+                                title: '红烧肉',
+                                description: '肥而不腻，入口即化的经典红烧肉。',
+                                ingredients: [
+                                    { name: '五花肉', amount: 500, unit: '克' },
+                                    { name: '生姜', amount: 3, unit: '片' },
+                                    { name: '葱', amount: 2, unit: '根' },
+                                    { name: '八角', amount: 2, unit: '个' },
+                                    { name: '桂皮', amount: 1, unit: '段' },
+                                    { name: '酱油', amount: 2, unit: '大勺' },
+                                    { name: '冰糖', amount: 30, unit: '克' }
+                                ],
+                                steps: [
+                                    { description: '五花肉切块，冷水下锅焯水去血水。', timerEnabled: true, timerMinutes: 5 },
+                                    { description: '锅中放油，加入冰糖小火熬至焦糖色。', timerEnabled: true, timerMinutes: 3 },
+                                    { description: '放入肉块翻炒上色。', timerEnabled: false, timerMinutes: 0 },
+                                    { description: '加入姜片、葱段、八角、桂皮和酱油，加水没过肉块。', timerEnabled: false, timerMinutes: 0 },
+                                    { description: '大火烧开后转小火慢炖。', timerEnabled: true, timerMinutes: 60 },
+                                    { description: '最后大火收汁即可。', timerEnabled: true, timerMinutes: 5 }
+                                ],
+                                createdAt: new Date().toISOString()
+                            }
+                        ];
+                        
+                        recipes.value = sampleRecipes;
+                        saveRecipes();
+                    }
+                    
+                    // 初始化图标
+                    lucide.createIcons();
                 });
-            }
-            
-            // 显示FormData中的所有键值对，用于调试
-            console.log('FormData中的所有数据:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}: ${value}`);
-            }
-            
-            const ingredients = ingredientNames.map((name, index) => ({
-                name: name.trim(),
-                amount: parseFloat(ingredientAmounts[index]),
-                unit: ingredientUnits[index].trim()
-            }));
-            
-            // 处理步骤数据
-            const steps = stepDescriptions.map((description, index) => {
-                console.log(`步骤 ${index + 1} 最终数据:`, {
-                    description: description.trim(),
-                    timerEnabled: stepTimerEnabled[index],
-                    timerMinutes: stepTimerMinutes[index]
+                
+                // 监听步骤变化，自动启动计时器
+                watch(currentStepIndex, () => {
+                    startStepTimer();
                 });
                 
                 return {
-                    description: description.trim(),
-                    timerEnabled: stepTimerEnabled[index],
-                    timerMinutes: stepTimerMinutes[index]
+                    // 状态
+                    recipes,
+                    searchTerm,
+                    currentPage,
+                    currentRecipe,
+                    adjustedIngredients,
+                    servings,
+                    showAddModal,
+                    showAdjustModal,
+                    showDeleteModal,
+                    showClearDataModal,
+                    showTimerDoneModal,
+                    showToast,
+                    toastMessage,
+                    editingRecipe,
+                    recipeForm,
+                    deleteRecipe,
+                    isCooking,
+                    currentStepIndex,
+                    isTimerRunning,
+                    timerMinutes,
+                    timerSeconds,
+                    
+                    // 计算属性
+                    filteredRecipes,
+                    currentStep,
+                    cookingStats,
+                    topRecipes,
+                    
+                    // 方法
+                    navigateTo,
+                    showAddRecipeModal,
+                    hideAddRecipeModal,
+                    editRecipe,
+                    saveRecipe,
+                    showDeleteConfirmModal,
+                    hideDeleteConfirmModal,
+                    confirmDeleteRecipe,
+                    viewRecipeDetail,
+                    showAdjustIngredientsModal,
+                    hideAdjustIngredientsModal,
+                    confirmAdjustIngredients,
+                    startCooking,
+                    stopCooking,
+                    nextStep,
+                    previousStep,
+                    goToStep,
+                    toggleTimer,
+                    stopTimer,
+                    hideTimerDoneModal,
+                    finishCooking,
+                    handleSearch,
+                    exportData,
+                    triggerImport,
+                    importData,
+                    showClearDataConfirm,
+                    hideClearDataModal,
+                    confirmClearData,
+                    handleTouchStart,
+                    handleTouchMove,
+                    handleTouchEnd,
+                    getRankIcon,
+                    getBarColor,
+                    getBarWidth,
+                    addIngredient,
+                    removeIngredient,
+                    addStep,
+                    removeStep,
+                    toggleTimerInput,
+                    formatDate,
+                    getRecipeIcon,
+                    formatTime
                 };
-            });
-            
-            // 获取编辑索引
-            const editIndex = parseInt(this.dataset.editIndex) || -1;
-            
-            const newRecipe = {
-                id: editIndex >= 0 ? recipes[editIndex].id : Date.now().toString(),
-                title: title.trim(),
-                description: description.trim(),
-                ingredients,
-                steps,
-                createdAt: editIndex >= 0 ? recipes[editIndex].createdAt : new Date().toISOString()
-            };
-            
-            if (editIndex >= 0) {
-                recipes[editIndex] = newRecipe;
-                // 清除编辑索引
-                this.dataset.editIndex = -1;
-            } else {
-                recipes.push(newRecipe);
             }
-            saveRecipes();
-            displayRecipes();
-            hideAddRecipeModal();
-            showToast(currentRecipeIndex >= 0 ? '菜谱更新成功！' : '菜谱添加成功！');
-            updateRecipeCount();
-        });
-
-        // 编辑菜谱
-        function editRecipe(index) {
-            const recipe = recipes[index];
-            document.getElementById('recipe-title').value = recipe.title;
-            document.getElementById('recipe-description').value = recipe.description;
-            
-            // 填充食材
-            const ingredientsContainer = document.getElementById('ingredients-input-container');
-            ingredientsContainer.innerHTML = '';
-            recipe.ingredients.forEach((ing, i) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'ingredient-input flex space-x-2';
-                inputGroup.innerHTML = `
-                    <input type="text" name="ingredient-name[]" placeholder="食材名称" class="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${ing.name}" required>
-                    <input type="number" name="ingredient-amount[]" placeholder="数量" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${ing.amount}" required>
-                    <input type="text" name="ingredient-unit[]" placeholder="单位" class="w-1/4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${ing.unit}" required>
-                    <button type="button" class="remove-ingredient bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                `;
-                ingredientsContainer.appendChild(inputGroup);
-            });
-
-            // 填充步骤
-            const stepsContainer = document.getElementById('steps-input-container');
-            stepsContainer.innerHTML = '';
-            recipe.steps.forEach((step, i) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'step-input';
-                inputGroup.innerHTML = `
-                    <textarea name="step-description[]" rows="2" placeholder="烹饪步骤..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>${step.description}</textarea>
-                    <div class="flex items-center justify-between mt-1">
-                        <label class="text-sm text-gray-600 flex items-center">
-                            <input type="checkbox" name="step-timer-enabled[${i}]" class="mr-2" ${step.timerEnabled ? 'checked' : ''}>
-                            需要计时
-                        </label>
-                        <input type="number" name="step-timer-minutes[${i}]" placeholder="分钟" class="w-20 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value="${step.timerMinutes}" ${!step.timerEnabled ? 'disabled' : ''}>
-                        <button type="button" class="remove-step bg-red-100 text-red-500 px-2 rounded-md hover:bg-red-200">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                `;
-                stepsContainer.appendChild(inputGroup);
-                
-                // 为新添加的步骤添加事件监听器
-                const removeBtn = inputGroup.querySelector('.remove-step');
-                if (removeBtn) {
-                    removeBtn.addEventListener('click', function() {
-                        if (document.querySelectorAll('.step-input').length > 1) {
-                            inputGroup.remove();
-                        } else {
-                            showToast('至少需要一个步骤');
-                        }
-                    });
-                }
-                
-                // 添加计时复选框事件监听
-                const timerCheckbox = inputGroup.querySelector('input[name^="step-timer-enabled"]');
-                const timerInput = inputGroup.querySelector('input[name^="step-timer-minutes"]');
-                if (timerCheckbox && timerInput) {
-                    timerCheckbox.addEventListener('change', () => {
-                        timerInput.disabled = !timerCheckbox.checked;
-                    });
-                }
-            });
-
-            // 显示模态框并更新标题
-            document.querySelector('#add-recipe-modal .modal-content h2').textContent = '编辑菜谱';
-            showAddRecipeModal();
-
-            // 为新生成的表单元素添加事件监听器
-            addEventListenersToForm();
-
-            // 存储当前编辑的索引
-            document.getElementById('add-recipe-form').dataset.editIndex = index;
-            
-            console.log('编辑菜谱:', recipe.title, '索引:', index);
-        }
-
-        // 确认删除菜谱
-        function confirmDelete(index) {
-            console.log('Confirm delete called for index:', index);
-            if (window.confirm('确定要删除这个菜谱吗？')) {
-                console.log('User confirmed deletion');
-                deleteRecipe(index);
-            } else {
-                console.log('User cancelled deletion');
-            }
-        }
-
-        // 删除菜谱
-        function deleteRecipe(index) {
-            console.log('Delete recipe called for index:', index);
-            console.log('Recipes before deletion:', recipes.length);
-            
-            if (index >= 0 && index < recipes.length) {
-                recipes.splice(index, 1);
-                console.log('Recipes after deletion:', recipes.length);
-                
-                saveRecipes();
-                displayRecipes();
-                showToast('菜谱已删除');
-                updateRecipeCount();
-            } else {
-                console.log('Invalid index:', index);
-                showToast('删除失败：无效的菜谱索引');
-            }
-        }
-
-        // 清除所有数据
-        document.getElementById('clear-data-btn').addEventListener('click', function() {
-            if (confirm('确定要清除所有数据吗？此操作不可恢复。')) {
-                recipes = [];
-                saveRecipes();
-                displayRecipes();
-                showToast('所有数据已清除');
-                updateRecipeCount();
-            }
-        });
-
-        // 导出数据为CSV
-        document.getElementById('export-data-btn').addEventListener('click', function() {
-            if (recipes.length === 0) {
-                showToast('没有数据可导出');
-                return;
-            }
-
-            let csvContent = "菜谱名称,描述,食材,步骤\n";
-
-            recipes.forEach(recipe => {
-                const ingredients = recipe.ingredients.map(i => `${i.name}:${i.amount}${i.unit}`).join(';');
-                const steps = recipe.steps.map(s => `${s.description}${s.timerEnabled ? ` (${s.timerMinutes}分钟)` : ''}`).join(';');
-                
-                csvContent += `"${recipe.title}","${recipe.description}","${ingredients}","${steps}"\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `recipes_${new Date().toISOString().slice(0, 10)}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('数据导出成功');
-        });
-
-        // 导入数据
-        document.getElementById('import-data-btn').addEventListener('click', function() {
-            document.getElementById('import-data-input').click();
-        });
-
-        document.getElementById('import-data-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const text = event.target.result;
-                const lines = text.split('\n');
-                const newRecipes = [];
-
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
-
-                    const columns = lines[i].split('","');
-                    if (columns.length < 4) continue;
-
-                    const title = columns[0].replace('"', '');
-                    const description = columns[1];
-                    const ingredientsStr = columns[2];
-                    const stepsStr = columns[3].replace('"', '');
-
-                    const ingredients = ingredientsStr.split(';').map(ing => {
-                        const parts = ing.split(':');
-                        const name = parts[0];
-                        const amountMatch = parts[1].match(/(\d+\.?\d*)/);
-                        const amount = amountMatch ? parseFloat(amountMatch[1]) : 1;
-                        const unit = parts[1].replace(/\d+\.?\d*/, '');
-                        return { name, amount, unit };
-                    });
-
-                    const steps = stepsStr.split(';').map(stepDesc => {
-                        const timerMatch = stepDesc.match(/\((\d+)分钟\)/);
-                        const timerEnabled = timerMatch !== null;
-                        const timerMinutes = timerEnabled ? parseInt(timerMatch[1]) : 0;
-                        const description = timerEnabled ? stepDesc.replace(/ \(\d+分钟\)/, '') : stepDesc;
-                        return { description, timerEnabled, timerMinutes };
-                    });
-
-                    newRecipes.push({
-                        id: Date.now().toString() + i,
-                        title,
-                        description,
-                        ingredients,
-                        steps,
-                        createdAt: new Date().toISOString()
-                    });
-                }
-
-                if (newRecipes.length > 0) {
-                    if (confirm(`确定要导入 ${newRecipes.length} 个菜谱吗？这将覆盖现有数据。`)) {
-                        recipes = newRecipes;
-                        saveRecipes();
-                        displayRecipes();
-                        updateRecipeCount();
-                        showToast(`成功导入 ${newRecipes.length} 个菜谱`);
-                    }
-                } else {
-                    showToast('未找到有效的菜谱数据');
-                }
-            };
-            reader.readAsText(file);
-            this.value = ''; // 重置input，以便可以再次选择同一个文件
-        });
-
-        // 保存菜谱到本地存储
-        function saveRecipes() {
-            localStorage.setItem('recipes', JSON.stringify(recipes));
-        }
-
-        // 显示Toast提示
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('active');
-            
-            setTimeout(() => {
-                toast.classList.remove('active');
-            }, 3000);
-        }
-
-        // 更新菜谱计数
-        function updateRecipeCount() {
-            document.getElementById('recipe-count').textContent = recipes.length;
-        }
-
-        // 搜索菜谱
-        function searchRecipes(searchTerm) {
-            const recipeList = document.getElementById('recipe-list');
-            recipeList.innerHTML = '';
-            
-            if (searchTerm === '') {
-                displayRecipes();
-                return;
-            }
-            
-            const filteredRecipes = recipes.filter(recipe => 
-                recipe.title.toLowerCase().includes(searchTerm)
-            );
-            
-            if (filteredRecipes.length === 0) {
-                recipeList.innerHTML = `
-                    <div class="col-span-2 text-center py-8 text-gray-500">
-                        <i data-lucide="search" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
-                        <p>未找到匹配的菜谱</p>
-                        <p class="text-sm">试试其他关键词</p>
-                    </div>
-                `;
-                lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-                return;
-            }
-
-            filteredRecipes.forEach((recipe, index) => {
-                const originalIndex = recipes.findIndex(r => r.id === recipe.id);
-                const recipeCard = document.createElement('div');
-                recipeCard.className = 'recipe-card bg-white rounded-lg shadow-sm overflow-hidden';
-                
-                // 根据菜谱名称选择一个图标
-                let recipeIcon = 'utensils';
-                if (recipe.title.includes('肉')) recipeIcon = 'drumstick-bite';
-                else if (recipe.title.includes('鱼')) recipeIcon = 'fish';
-                else if (recipe.title.includes('蛋')) recipeIcon = 'egg';
-                else if (recipe.title.includes('汤')) recipeIcon = 'bowl-hot';
-                else if (recipe.title.includes('菜') || recipe.title.includes('蔬')) recipeIcon = 'carrot';
-                
-                recipeCard.innerHTML = `
-                    <div class="p-4">
-                        <div class="flex items-center mb-2">
-                            <i data-lucide="${recipeIcon}" class="w-6 h-6 text-green-500 mr-2"></i>
-                            <h3 class="text-lg font-semibold">${recipe.title}</h3>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4">${recipe.description}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-500">${recipe.ingredients.length} 种食材 · ${recipe.steps.length} 个步骤</span>
-                            <div class="flex space-x-2">
-                                <button onclick="editRecipe(${originalIndex})" class="text-green-500 hover:text-green-700">
-                                    <i data-lucide="edit" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="showDeleteConfirmModal(${originalIndex})" class="text-red-500 hover:text-red-700">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-2 flex justify-end">
-                        <button onclick="viewRecipeDetail(${originalIndex})" class="text-green-500 hover:text-green-700 text-sm font-medium">
-                            查看详情 <i data-lucide="arrow-right" class="w-4 h-4 inline"></i>
-                        </button>
-                    </div>
-                `;
-                recipeList.appendChild(recipeCard);
-
-
-            });
-            lucide.createIcons();
-            initSwipeGestures();
-            updateCookingStats();
-            renderTopRecipesChart();
-        }
-
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            displayRecipes();
-            addEventListenersToForm();
-            updateRecipeCount();
-            
-            // 为搜索框添加事件监听
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase().trim();
-                searchRecipes(searchTerm);
-            });
-            
-            // 添加一些示例数据（如果没有菜谱的话）
-            if (recipes.length === 0) {
-                const sampleRecipes = [
-                    {
-                        id: '1',
-                        title: '番茄炒蛋',
-                        description: '一道经典的家常菜，酸甜可口，营养丰富。',
-                        ingredients: [
-                            { name: '鸡蛋', amount: 3, unit: '个' },
-                            { name: '番茄', amount: 2, unit: '个' },
-                            { name: '葱', amount: 1, unit: '根' },
-                            { name: '盐', amount: 1, unit: '小勺' },
-                            { name: '糖', amount: 1, unit: '小勺' }
-                        ],
-                        steps: [
-                            { description: '将鸡蛋打散，加入少许盐搅拌均匀。', timerEnabled: false, timerMinutes: 0 },
-                            { description: '番茄洗净切块，葱切末。', timerEnabled: false, timerMinutes: 0 },
-                            { description: '热锅倒油，倒入蛋液炒熟盛出。', timerEnabled: true, timerMinutes: 2 },
-                            { description: '锅中加油，放入番茄翻炒出汁。', timerEnabled: true, timerMinutes: 3 },
-                            { description: '加入炒好的鸡蛋，撒上葱花，翻炒均匀即可。', timerEnabled: false, timerMinutes: 0 }
-                        ],
-                        createdAt: new Date().toISOString()
-                    },
-                    {
-                        id: '2',
-                        title: '红烧肉',
-                        description: '肥而不腻，入口即化的经典红烧肉。',
-                        ingredients: [
-                            { name: '五花肉', amount: 500, unit: '克' },
-                            { name: '生姜', amount: 3, unit: '片' },
-                            { name: '葱', amount: 2, unit: '根' },
-                            { name: '八角', amount: 2, unit: '个' },
-                            { name: '桂皮', amount: 1, unit: '段' },
-                            { name: '酱油', amount: 2, unit: '大勺' },
-                            { name: '冰糖', amount: 30, unit: '克' }
-                        ],
-                        steps: [
-                            { description: '五花肉切块，冷水下锅焯水去血水。', timerEnabled: true, timerMinutes: 5 },
-                            { description: '锅中放油，加入冰糖小火熬至焦糖色。', timerEnabled: true, timerMinutes: 3 },
-                            { description: '放入肉块翻炒上色。', timerEnabled: false, timerMinutes: 0 },
-                            { description: '加入姜片、葱段、八角、桂皮和酱油，加水没过肉块。', timerEnabled: false, timerMinutes: 0 },
-                            { description: '大火烧开后转小火慢炖。', timerEnabled: true, timerMinutes: 60 },
-                            { description: '最后大火收汁即可。', timerEnabled: true, timerMinutes: 5 }
-                        ],
-                        createdAt: new Date().toISOString()
-                    }
-                ];
-                
-                recipes = sampleRecipes;
-                saveRecipes();
-                displayRecipes();
-                updateRecipeCount();
-            }
-        });
+        }).mount('#app');
     </script>
 </body>
 </html>
